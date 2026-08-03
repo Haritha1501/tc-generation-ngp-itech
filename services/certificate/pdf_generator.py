@@ -68,6 +68,68 @@ def _create_valid_error_pdf(pdf_path: str, message: str):
     with open(path, "wb") as f:
         f.write(pdf_bytes)
 
+def embed_images_as_base64(html_content: str, base_dir: Path) -> str:
+    """
+    Converts all <img src="..."> references into data:image/...;base64,...
+    so Chromium/Playwright renders 100% of images without security restrictions.
+    """
+    import base64
+    import mimetypes
+
+    def replace_src(match):
+        prefix = match.group(1)
+        path_str = match.group(2)
+        suffix = match.group(3)
+
+        if path_str.startswith("data:"):
+            return match.group(0)
+
+        from urllib.parse import unquote, urlparse
+        if path_str.startswith("file://"):
+            parsed = urlparse(path_str)
+            raw_p = unquote(parsed.path)
+            if sys.platform == "win32" and raw_p.startswith("/"):
+                raw_p = raw_p[1:]
+            clean_path = Path(raw_p)
+        else:
+            clean_path = Path(path_str.replace("file:///", "").replace("file://", "").lstrip("/"))
+
+        target_path = None
+        possible_paths = [
+            clean_path,
+            base_dir / clean_path,
+            base_dir / "static" / "images" / clean_path.name,
+            base_dir / "static" / clean_path.name,
+            base_dir / clean_path.name,
+        ]
+
+        for p in possible_paths:
+            try:
+                resolved_p = p.resolve()
+                if resolved_p.exists() and resolved_p.is_file():
+                    target_path = resolved_p
+                    break
+            except Exception:
+                continue
+
+        if target_path and target_path.exists():
+            try:
+                mime_type, _ = mimetypes.guess_type(str(target_path))
+                if not mime_type:
+                    ext = target_path.suffix.lower()
+                    mime_type = "image/png" if ext == ".png" else "image/jpeg"
+                
+                img_bytes = target_path.read_bytes()
+                if len(img_bytes) > 0:
+                    b64_str = base64.b64encode(img_bytes).decode("utf-8")
+                    return f'{prefix}data:{mime_type};base64,{b64_str}{suffix}'
+            except Exception as e:
+                print(f"Error encoding image {target_path}: {e}", file=sys.stderr)
+
+        return match.group(0)
+
+    return re.sub(r'(src=["\'])([^"\']+)(["\'])', replace_src, html_content, flags=re.IGNORECASE)
+
 async def _generate(html_file, pdf_file):
     html_path = Path(html_file).resolve()
     pdf_path = Path(pdf_file).resolve()
@@ -102,6 +164,9 @@ async def _generate(html_file, pdf_file):
         html_content = re.sub(r'(\.\./)+generated/', f'{generated_uri}/', html_content)
         html_content = re.sub(r'/generated/', f'{generated_uri}/', html_content)
 
+        # Embed all images as Base64 data URIs so Chromium renders them 100% reliably
+        html_content = embed_images_as_base64(html_content, cwd)
+
         # Attempt Playwright first (up to 2 tries if chromium needs auto-installation)
         last_error = None
         for attempt in range(2):
@@ -110,7 +175,7 @@ async def _generate(html_file, pdf_file):
                 async with async_playwright() as p:
                     browser = await p.chromium.launch(
                         headless=True,
-                        args=["--no-sandbox", "--disable-setuid-sandbox", "--disable-dev-shm-usage"]
+                        args=["--no-sandbox", "--disable-setuid-sandbox", "--disable-dev-shm-usage", "--allow-file-access-from-files"]
                     )
                     page = await browser.new_page()
 
