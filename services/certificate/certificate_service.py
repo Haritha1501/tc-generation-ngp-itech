@@ -40,7 +40,7 @@ def generate_certificates(
             )
 
         pdf_file = Path(pdf_folder) / (
-            student["register_number"] + ".pdf"
+            str(student["register_number"]) + ".pdf"
         )
 
         generate_pdf(

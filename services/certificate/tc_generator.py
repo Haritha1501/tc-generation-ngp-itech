@@ -34,7 +34,7 @@ def save_html(student, html_folder):
         '../../static/images/'
     )
 
-    filename = student["register_number"] + ".html"
+    filename = str(student["register_number"]) + ".html"
 
     path = Path(
 
