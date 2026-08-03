@@ -4,6 +4,8 @@
    STYLE.CSS
 ========================================================== */
 
+@import url('https://fonts.googleapis.com/css2?family=Lobster&family=Merriweather:ital,opsz,wght@0,18..144,300..900;1,18..144,300..900&family=Oswald:wght@200..700&display=swap');
+
 /* ==========================================================
    VARIABLES
 ========================================================== */
@@ -150,13 +152,13 @@ body{
 
 .college-details h1{
 
-    font-family:"Oswald", Arial, Helvetica, sans-serif;
+    font-family:"Oswald",sans-serif;
 
-    font-size:24pt;
+    font-size:27pt;
 
     font-weight:700;
 
-    letter-spacing:0px;
+    letter-spacing:.4px;
 
     white-space:nowrap;
 

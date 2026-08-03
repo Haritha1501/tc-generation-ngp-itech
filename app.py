@@ -301,7 +301,7 @@ def login(
 @app.get("/logout")
 def logout(request: Request):
     request.session.clear()
-    return RedirectResponse(url="/login")
+    return RedirectResponse(url="/")
 
 # ================= ADVISOR DASHBOARD =================
 
@@ -798,7 +798,7 @@ def hod_login(
 @app.get("/hod/logout")
 def hod_logout(request: Request):
     request.session.clear()
-    return RedirectResponse(url="/hod/login")
+    return RedirectResponse(url="/")
 
 @app.get("/hod")
 def hod_dashboard(request: Request):
@@ -1055,7 +1055,7 @@ def principal_login(
 @app.get("/principal/logout")
 def principal_logout(request: Request):
     request.session.clear()
-    return RedirectResponse(url="/principal/login")
+    return RedirectResponse(url="/")
 
 @app.get("/principal")
 def principal_dashboard(request: Request):

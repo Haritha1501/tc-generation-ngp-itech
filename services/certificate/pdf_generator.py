@@ -179,8 +179,11 @@ async def _generate(html_file, pdf_file):
                     )
                     page = await browser.new_page()
 
-                    # Load HTML content directly into Playwright
-                    await page.set_content(html_content, wait_until="domcontentloaded", timeout=15000)
+                    # Load HTML content into Playwright and wait for fonts and assets to finish loading
+                    try:
+                        await page.set_content(html_content, wait_until="networkidle", timeout=15000)
+                    except Exception:
+                        await page.set_content(html_content, wait_until="domcontentloaded", timeout=15000)
 
                     try:
                         await page.evaluate("document.fonts.ready")
