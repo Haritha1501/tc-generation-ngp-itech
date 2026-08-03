@@ -1,7 +1,42 @@
 import asyncio
 import re
 import sys
+import subprocess
 from pathlib import Path
+
+_PLAYWRIGHT_INSTALLED = False
+
+def _ensure_chromium_installed():
+    global _PLAYWRIGHT_INSTALLED
+    if _PLAYWRIGHT_INSTALLED:
+        return
+    print("Attempting automatic Playwright Chromium installation...", file=sys.stderr)
+    try:
+        res = subprocess.run(
+            [sys.executable, "-m", "playwright", "install", "chromium"],
+            capture_output=True,
+            text=True,
+            timeout=180
+        )
+        print(f"Playwright install stdout: {res.stdout}", file=sys.stderr)
+        print(f"Playwright install stderr: {res.stderr}", file=sys.stderr)
+        _PLAYWRIGHT_INSTALLED = True
+    except Exception as e:
+        print(f"Failed to auto-install Playwright chromium: {e}", file=sys.stderr)
+
+def _try_xhtml2pdf_fallback(html_content: str, pdf_path: Path) -> bool:
+    """
+    Attempts to generate PDF using xhtml2pdf pure-python renderer if available.
+    Returns True if successful, False otherwise.
+    """
+    try:
+        from xhtml2pdf import pisa
+        with open(pdf_path, "wb") as pdf_file:
+            pisa_status = pisa.CreatePDF(html_content, dest=pdf_file)
+        return not pisa_status.err
+    except Exception as e:
+        print(f"xhtml2pdf fallback failed: {e}", file=sys.stderr)
+        return False
 
 def _create_valid_error_pdf(pdf_path: str, message: str):
     """
@@ -47,49 +82,70 @@ async def _generate(html_file, pdf_file):
         html_content = html_path.read_text(encoding="utf-8")
         
         # Convert relative asset links (/static/, ../static/, ../../static/) to absolute file URIs
-        # so Playwright can locate CSS, images, seals, logos, and signatures from anywhere
         cwd = Path.cwd().resolve()
         static_uri = (cwd / "static").as_uri()
         generated_uri = (cwd / "generated").as_uri()
         
-        html_content = re.sub(r'(\.\./)+static/', f'{static_uri}/', html_content)
+        html_content = re.sub(r'(\.\.\/)+static/', f'{static_uri}/', html_content)
         html_content = re.sub(r'/static/', f'{static_uri}/', html_content)
-        html_content = re.sub(r'(\.\./)+generated/', f'{generated_uri}/', html_content)
+        html_content = re.sub(r'(\.\.\/)+generated/', f'{generated_uri}/', html_content)
         html_content = re.sub(r'/generated/', f'{generated_uri}/', html_content)
 
-        from playwright.async_api import async_playwright
-        async with async_playwright() as p:
-            browser = await p.chromium.launch(
-                headless=True,
-                args=["--no-sandbox", "--disable-setuid-sandbox", "--disable-dev-shm-usage"]
-            )
-            page = await browser.new_page()
-
-            # Load HTML content directly into Playwright
-            await page.set_content(html_content, wait_until="load", timeout=15000)
-
+        # Attempt Playwright first (up to 2 tries if chromium needs auto-installation)
+        last_error = None
+        for attempt in range(2):
             try:
-                await page.evaluate("document.fonts.ready")
-            except Exception:
-                pass
+                from playwright.async_api import async_playwright
+                async with async_playwright() as p:
+                    browser = await p.chromium.launch(
+                        headless=True,
+                        args=["--no-sandbox", "--disable-setuid-sandbox", "--disable-dev-shm-usage"]
+                    )
+                    page = await browser.new_page()
 
-            await page.pdf(
-                path=str(pdf_path),
-                width="210mm",
-                height="297mm",
-                print_background=True,
-                prefer_css_page_size=True,
-                margin={
-                    "top": "0mm",
-                    "bottom": "0mm",
-                    "left": "0mm",
-                    "right": "0mm"
-                }
-            )
-            await browser.close()
-            print(f"Successfully generated PDF: {pdf_path}")
+                    await page.set_content(html_content, wait_until="load", timeout=15000)
+
+                    try:
+                        await page.evaluate("document.fonts.ready")
+                    except Exception:
+                        pass
+
+                    await page.pdf(
+                        path=str(pdf_path),
+                        width="210mm",
+                        height="297mm",
+                        print_background=True,
+                        prefer_css_page_size=True,
+                        margin={
+                            "top": "0mm",
+                            "bottom": "0mm",
+                            "left": "0mm",
+                            "right": "0mm"
+                        }
+                    )
+                    await browser.close()
+                    print(f"Successfully generated PDF via Playwright: {pdf_path}")
+                    return
+            except Exception as e:
+                last_error = e
+                err_str = str(e)
+                print(f"Playwright attempt {attempt+1} failed: {err_str}", file=sys.stderr)
+                if ("Executable doesn't exist" in err_str or "executable" in err_str.lower()) and attempt == 0:
+                    _ensure_chromium_installed()
+                    continue
+                else:
+                    break
+
+        # Fallback 1: xhtml2pdf pure-python renderer
+        if _try_xhtml2pdf_fallback(html_content, pdf_path):
+            print(f"Successfully generated PDF via xhtml2pdf fallback: {pdf_path}")
+            return
+
+        # Fallback 2: Valid binary PDF error note
+        _create_valid_error_pdf(str(pdf_path), f"PDF generation error: {last_error}")
+
     except Exception as e:
-        print(f"Error generating PDF via Playwright: {e}", file=sys.stderr)
+        print(f"Error generating PDF: {e}", file=sys.stderr)
         _create_valid_error_pdf(str(pdf_path), f"PDF generation error: {e}")
 
 def generate_pdf(html_file, pdf_file):
