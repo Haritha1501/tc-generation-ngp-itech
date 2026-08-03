@@ -263,9 +263,9 @@ def regenerate_final_certificates(department, class_name, approved_students_regs
                 writer.writeheader()
                 writer.writerows(approved_records)
                 
-        # Trigger the generation
+        # Trigger the generation with real principal signature
         from services.certificate.certificate_service import generate_certificates
-        generate_certificates(approved_records, str(html_folder), str(pdf_folder))
+        generate_certificates(approved_records, str(html_folder), str(pdf_folder), is_final_principal_approval=True)
     finally:
         # Restore backup
         if temp_csv_backup.exists():
