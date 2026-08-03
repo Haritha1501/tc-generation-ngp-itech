@@ -171,7 +171,7 @@ def preview_sample(request: Request):
             return "No sample students found in data/students.csv"
         student = students[0]
         student["student_photo"] = "/static/images/" + student["student_photo"]
-        student["principal_signature"] = "/static/images/principal_placeholder.jpg"
+        student["principal_signature"] = "/static/images/principal.jpg"
         
         context = {
             "request": request,

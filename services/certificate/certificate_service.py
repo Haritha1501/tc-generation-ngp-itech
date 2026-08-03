@@ -11,12 +11,10 @@ def generate_preview():
     if not students:
         return None
 
-    student = dict(students[0])
-    photo_val = str(student.get("student_photo", ""))
-    if not photo_val.startswith("/static/images/"):
-        student["student_photo"] = "/static/images/" + photo_val.lstrip("/")
+    student = students[0]
 
-    student["principal_signature"] = "/static/images/principal_placeholder.jpg"
+    student["student_photo"] = "/static/images/" + student["student_photo"]
+    student["principal_signature"] = "/static/images/principal.jpeg"
 
     html = render_certificate(student)
 
@@ -26,30 +24,23 @@ def generate_preview():
 def generate_certificates(
     students,
     html_folder,
-    pdf_folder,
-    is_final_principal_approval=False
+    pdf_folder
 ):
     if students is None:
         students = get_students("data/students.csv")
 
     for student in students:
-        student_record = dict(student)
-        photo_val = str(student_record.get("student_photo", ""))
-        if not photo_val.startswith("/static/images/"):
-            student_record["student_photo"] = "/static/images/" + photo_val.lstrip("/")
 
-        if is_final_principal_approval:
-            student_record["principal_signature"] = "/static/images/principal.jpeg"
-        else:
-            student_record["principal_signature"] = "/static/images/principal_placeholder.jpg"
+        student["student_photo"] = "/static/images/" + student["student_photo"]
+        student["principal_signature"] = "/static/images/principal.jpeg"
 
         html_file = save_html(
-            student_record,
-            html_folder
-        )
+                student,
+                html_folder
+            )
 
         pdf_file = Path(pdf_folder) / (
-            str(student_record["register_number"]) + ".pdf"
+            str(student["register_number"]) + ".pdf"
         )
 
         generate_pdf(
