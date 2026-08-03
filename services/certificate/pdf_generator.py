@@ -81,14 +81,25 @@ async def _generate(html_file, pdf_file):
     try:
         html_content = html_path.read_text(encoding="utf-8")
         
-        # Convert relative asset links (/static/, ../static/, ../../static/) to absolute file URIs
         cwd = Path.cwd().resolve()
+        
+        # Read static/css/style.css and inline it directly to guarantee CSS styling works
+        css_path = cwd / "static" / "css" / "style.css"
+        if css_path.exists():
+            css_text = css_path.read_text(encoding="utf-8")
+            html_content = re.sub(
+                r'<link\s+rel="stylesheet"\s+href="[^"]*style\.css"[^>]*>',
+                f'<style>\n{css_text}\n</style>',
+                html_content
+            )
+
+        # Convert relative asset links to absolute file URIs
         static_uri = (cwd / "static").as_uri()
         generated_uri = (cwd / "generated").as_uri()
         
-        html_content = re.sub(r'(\.\.\/)+static/', f'{static_uri}/', html_content)
+        html_content = re.sub(r'(\.\./)+static/', f'{static_uri}/', html_content)
         html_content = re.sub(r'/static/', f'{static_uri}/', html_content)
-        html_content = re.sub(r'(\.\.\/)+generated/', f'{generated_uri}/', html_content)
+        html_content = re.sub(r'(\.\./)+generated/', f'{generated_uri}/', html_content)
         html_content = re.sub(r'/generated/', f'{generated_uri}/', html_content)
 
         # Attempt Playwright first (up to 2 tries if chromium needs auto-installation)
@@ -103,7 +114,8 @@ async def _generate(html_file, pdf_file):
                     )
                     page = await browser.new_page()
 
-                    await page.set_content(html_content, wait_until="load", timeout=15000)
+                    # Load HTML content directly into Playwright
+                    await page.set_content(html_content, wait_until="domcontentloaded", timeout=15000)
 
                     try:
                         await page.evaluate("document.fonts.ready")
