@@ -1,0 +1,30 @@
+# Python bytecode & environments
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+.venv/
+build/
+dist/
+*.egg-info/
+
+# Databases
+*.db
+*.sqlite3
+
+# Dynamically generated assets
+generated/
+output/
+uploads/
+(generatedpdfs)/
+approvals/
+
+# Test & IDE cache
+.pytest_cache/
+.vscode/
+.idea/
+.DS_Store

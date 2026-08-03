@@ -1,0 +1,282 @@
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0">
+
+    <title>Transfer Certificate</title>
+
+    <!-- CSS -->
+    <link rel="stylesheet" href="/static/css/style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+    <link href="https://fonts.googleapis.com/css2?family=Lobster&family=Merriweather:ital,opsz,wght@0,18..144,300..900;1,18..144,300..900&family=Oswald:wght@200..700&display=swap" rel="stylesheet">
+
+</head>
+
+<body>
+    
+<div class="certificate">
+
+    <!-- Watermark -->
+    <img src="/static/images/watermark.png" class="watermark">
+
+    <!-- Header -->
+    <header class="header">
+
+        <div class="logo-section">
+            <img src="/static/images/logo.png" class="logo">
+        </div>
+
+        <div class="college-details">
+
+            <h1>Dr. N.G.P. INSTITUTE OF TECHNOLOGY</h1>
+
+            <h3>(An Autonomous Institution)</h3>
+
+            <p>
+                Approved by AICTE, New Delhi &
+                Affiliated to Anna University, Chennai.
+            </p>
+
+            <p>
+                Recognized by UGC | Accredited by NAAC
+            </p>
+
+            <p>
+                Dr. N.G.P. - Kalapatti Road,
+                Coimbatore - 641 048,
+                Tamil Nadu, India
+            </p>
+
+            <p class="contact">
+
+                ● 0422 - 2369105
+
+                |
+
+                📱 9025286806
+
+                |
+
+                ✉ info@drngpit.ac.in
+
+                |
+
+                Website :
+                www.drngpit.ac.in
+
+            </p>
+
+            <h2>
+                TRANSFER & CONDUCT CERTIFICATE
+            </h2>
+
+        </div>
+
+    </header>
+    <!-- ================= TOP INFO ================= -->
+    <section class="top-section">
+
+        <div class="copy-row">
+            <div class="copy-box">
+                COPY
+            </div>
+        </div>
+
+        <div class="top-info">
+
+            <div class="info-item">
+                <span class="label">T.C.No. :</span>
+                <span class="value">{{ tc_number }}</span>
+            </div>
+
+            <div class="info-item">
+                <span class="label">UMIS No. :</span>
+                <span class="value">{{ umis_number }}</span>
+            </div>
+
+            <div class="info-item">
+                <span class="label">Admission No. :</span>
+                <span class="value">{{ admission_number }}</span>
+            </div>
+
+        </div>
+        </section>
+<section class="details-section">
+<div class="details-left">
+    
+    
+    <div class="detail-row">
+        <div class="sl">1.</div>
+        <div class="field-name">Name of the Student</div>
+        <div class="colon">:</div>
+        <div class="field-value"><div class="field-text">{{ student_name }}</div></div>
+    </div>
+
+    <div class="detail-row">
+        <div class="sl">2.</div>
+        <div class="field-name">Name of the Parent / Guardian</div>
+        <div class="colon">:</div>
+        <div class="field-value"><div class="field-text">{{ parent_name }}</div></div>
+    </div>
+
+    <div class="detail-row">
+        <div class="sl">3.</div>
+        <div class="field-name">Gender</div>
+        <div class="colon">:</div>
+        <div class="field-value"><div class="field-text">{{ gender }}</div></div>
+    </div>
+
+    <div class="detail-row double dob-row">
+        <div class="sl">4.</div>
+        <div class="field-name">Date of Birth</div>
+        <div class="colon">:</div>
+
+        <div class="field-value dob-field">
+            <div class="dob-date">{{ dob }}</div>
+            <div class="dob-words">{{ dob_words }}</div>
+        </div>
+    </div>
+
+    <div class="detail-row">
+        <div class="sl">5.</div>
+        <div class="field-name">Nationality</div>
+        <div class="colon">:</div>
+        <div class="field-value"><div class="field-text">{{ nationality }}</div></div>
+    </div>
+
+    <div class="detail-row double">
+        <div class="sl">6.</div>
+        <div class="field-name">Religion, Community &amp; Caste</div>
+        <div class="colon">:</div>
+        <div class="field-value"><div class="field-text community-text" style="font-style: italic; font-size: 9pt;">Refer Community Certificate Issued by Revenue Authorities</div></div>
+    </div>
+
+    <div class="detail-row">
+        <div class="sl">7.</div>
+        <div class="field-name">Name of the Course</div>
+        <div class="colon">:</div>
+        <div class="field-value"><div class="field-text">{{ course }}</div></div>
+    </div>
+
+    <div class="detail-row">
+        <div class="sl">8.</div>
+        <div class="field-name">Roll Number</div>
+        <div class="colon">:</div>
+        <div class="field-value"><div class="field-text">{{ roll_number }}</div></div>
+    </div>
+
+    <div class="detail-row">
+        <div class="sl">9.</div>
+        <div class="field-name">Register Number</div>
+        <div class="colon">:</div>
+        <div class="field-value"><div class="field-text">{{ register_number }}</div></div>
+    </div>
+
+    <div class="detail-row double row10">
+
+    <div class="sl">10.</div>
+
+    <div class="field-name">
+        Class in which the student was<br>
+        studying at the time of leaving
+    </div>
+
+    <div class="colon">:</div>
+
+    <div class="field-value">
+        <div class="field-text">{{ class_leaving }}</div>
+    </div>
+
+</div>
+    <div class="detail-row">
+        <div class="sl">11.</div>
+        <div class="field-name">Date of Admission</div>
+        <div class="colon">:</div>
+        <div class="field-value"><div  class="field-text">{{ admission_date }}</div></div>
+    </div>
+
+    <div class="detail-row">
+        <div class="sl">12.</div>
+        <div class="field-name">Medium of Instruction</div>
+        <div class="colon">:</div>
+        <div class="field-value"><div class="field-text">{{ medium }}</div></div>
+    </div>
+
+    <div class="detail-row">
+        <div class="sl">13.</div>
+        <div class="field-name">Last date the student attended</div>
+        <div class="colon">:</div>
+        <div class="field-value"><div class="field-text">{{ last_attended }}</div></div>
+    </div>
+
+    <div class="detail-row">
+        <div class="sl">14.</div>
+        <div class="field-name">Reason for Leaving</div>
+        <div class="colon">:</div>
+        <div class="field-value"><div class="field-text">{{ reason_leaving }}</div></div>
+    </div>
+
+    <div class="detail-row">
+        <div class="sl">15.</div>
+        <div class="field-name">Conduct & Character</div>
+        <div class="colon">:</div>
+        <div class="field-value"><div class="field-text">{{ conduct }}</div></div>
+    </div>
+</div>
+<div class="details-right">
+    <div class="photo-frame">
+        <img src="{{ student_photo }}" alt="Student Photo">
+    </div>
+</div>
+</section>
+<section class="footer">
+
+    <!-- DATE -->
+
+    <div class="footer-left">
+
+        <span class="date-label">Date :</span>
+
+        <span class="date-value">{{ certificate_date }}</span>
+
+    </div>
+
+    <!-- SEAL -->
+
+    <div class="footer-center">
+
+        <img src="/static/images/seal.jpeg" class="seal">
+
+        <span class="seal-text" style="font-style: italic; font-weight: bold;">College Seal</span>
+
+    </div>
+
+    <!-- PRINCIPAL -->
+
+    <div class="footer-right">
+
+        <!-- <img class="principal-sign"
+        src=""> -->
+        <img class="principal-sign"
+            src="/static/images/principal.jpeg"
+            alt="Principal Signature">
+       
+        <div class="principal-title">
+
+            Principal
+
+        </div>
+
+        <img src="/static/images/principal_design.jpeg" class="principal-designation-img" >
+
+
+
+    </div>
+
+</section></div>>
+
+</body>

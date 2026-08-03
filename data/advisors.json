@@ -1,0 +1,214 @@
+{
+    "advisors": [
+        {
+            "username": "advisor_cse_a",
+            "password": "adv_cse_pswd_a",
+            "name": "Mr. Yathavraj V (CSE)",
+            "department": "CSE",
+            "class": "IV BE CSE A"
+        },
+        {
+            "username": "advisor_cse_b",
+            "password": "adv_cse_pswd_b",
+            "name": "Mr. Yathavraj V (CSE)",
+            "department": "CSE",
+            "class": "IV BE CSE B"
+        },
+        {
+            "username": "advisor_cse_c",
+            "password": "adv_cse_pswd_c",
+            "name": "Mr. Yathavraj V (CSE)",
+            "department": "CSE",
+            "class": "IV BE CSE C"
+        },
+        {
+            "username": "advisor_it_a",
+            "password": "adv_it_pswd_a",
+            "name": "Mrs. R Rathiya (IT)",
+            "department": "IT",
+            "class": "IV BE IT A"
+        },
+        {
+            "username": "advisor_it_b",
+            "password": "adv_it_pswd_b",
+            "name": "Mrs. R Rathiya (IT)",
+            "department": "IT",
+            "class": "IV BE IT B"
+        },
+        {
+            "username": "advisor_it_c",
+            "password": "adv_it_pswd_c",
+            "name": "Mrs. R Rathiya (IT)",
+            "department": "IT",
+            "class": "IV BE IT C"
+        },
+        {
+            "username": "advisor_ece_a",
+            "password": "adv_ece_pswd_a",
+            "name": "Mrs. Ragavi B (ECE)",
+            "department": "ECE",
+            "class": "IV BE ECE A"
+        },
+        {
+            "username": "advisor_ece_b",
+            "password": "adv_ece_pswd_b",
+            "name": "Mrs. Ragavi B (ECE)",
+            "department": "ECE",
+            "class": "IV BE ECE B"
+        },
+        {
+            "username": "advisor_ece_c",
+            "password": "adv_ece_pswd_c",
+            "name": "Mrs. Ragavi B (ECE)",
+            "department": "ECE",
+            "class": "IV BE ECE C"
+        },
+        {
+            "username": "advisor_eee_a",
+            "password": "adv_eee_pswd_a",
+            "name": "Mr. R BALAKRISHNAN (EEE)",
+            "department": "EEE",
+            "class": "IV BE EEE A"
+        },
+        {
+            "username": "advisor_eee_b",
+            "password": "adv_eee_pswd_b",
+            "name": "Mr. R BALAKRISHNAN (EEE)",
+            "department": "EEE",
+            "class": "IV BE EEE B"
+        },
+        {
+            "username": "advisor_eee_c",
+            "password": "adv_eee_pswd_c",
+            "name": "Mr. R BALAKRISHNAN (EEE)",
+            "department": "EEE",
+            "class": "IV BE EEE C"
+        },
+        {
+            "username": "advisor_aids_a",
+            "password": "adv_aids_pswd_a",
+            "name": "Dr. N Premkumar (AIDS)",
+            "department": "AIDS",
+            "class": "IV BE AIDS A"
+        },
+        {
+            "username": "advisor_aids_b",
+            "password": "adv_aids_pswd_b",
+            "name": "Dr. N Premkumar (AIDS)",
+            "department": "AIDS",
+            "class": "IV BE AIDS B"
+        },
+        {
+            "username": "advisor_aids_c",
+            "password": "adv_aids_pswd_c",
+            "name": "Dr. N Premkumar (AIDS)",
+            "department": "AIDS",
+            "class": "IV BE AIDS C"
+        },
+        {
+            "username": "advisor_mech_a",
+            "password": "adv_mech_pswd_a",
+            "name": "Dr. N Premkumar (AIDS)",
+            "department": "MECH",
+            "class": "IV BE MECH A"
+        },
+        {
+            "username": "advisor_mech_b",
+            "password": "adv_mech_pswd_b",
+            "name": "Dr. N Premkumar (AIDS)",
+            "department": "MECH",
+            "class": "IV BE MECH B"
+        },
+        {
+            "username": "advisor_mech_c",
+            "password": "adv_mech_pswd_c",
+            "name": "Dr. N Premkumar (AIDS)",
+            "department": "MECH",
+            "class": "IV BE MECH C"
+        },
+        {
+            "username": "advisor_civil_a",
+            "password": "adv_civil_pswd_a",
+            "name": "Dr. N Premkumar (AIDS)",
+            "department": "CIVIL",
+            "class": "IV BE CIVIL A"
+        },
+        {
+            "username": "advisor_civil_b",
+            "password": "adv_civil_pswd_b",
+            "name": "Dr. N Premkumar (AIDS)",
+            "department": "CIVIL",
+            "class": "IV BE CIVIL B"
+        },
+        {
+            "username": "advisor_civil_c",
+            "password": "adv_civil_pswd_c",
+            "name": "Dr. N Premkumar (AIDS)",
+            "department": "CIVIL",
+            "class": "IV BE CIVIL C"
+        },
+        {
+            "username": "advisor_csbs_a",
+            "password": "adv_csbs_pswd_a",
+            "name": "Dr. N Premkumar (AIDS)",
+            "department": "CSBS",
+            "class": "IV BE CSBS A"
+        },
+        {
+            "username": "advisor_csbs_b",
+            "password": "adv_csbs_pswd_b",
+            "name": "Dr. N Premkumar (AIDS)",
+            "department": "CSBS",
+            "class": "IV BE CSBS B"
+        },
+        {
+            "username": "advisor_csbs_c",
+            "password": "adv_csbs_pswd_c",
+            "name": "Dr. N Premkumar (AIDS)",
+            "department": "CSBS",
+            "class": "IV BE CSBS C"
+        },
+        {
+            "username": "advisor_cs_a",
+            "password": "adv_cs_pswd_a",
+            "name": "Dr. N Premkumar (AIDS)",
+            "department": "CS",
+            "class": "IV BE CS A"
+        },
+        {
+            "username": "advisor_cs_b",
+            "password": "adv_cs_pswd_b",
+            "name": "Dr. N Premkumar (AIDS)",
+            "department": "CS",
+            "class": "IV BE CS B"
+        },
+        {
+            "username": "advisor_cs_c",
+            "password": "adv_cs_pswd_c",
+            "name": "Dr. N Premkumar (AIDS)",
+            "department": "CS",
+            "class": "IV BE CS C"
+        },
+        {
+            "username": "advisor_bme_a",
+            "password": "adv_bme_pswd_a",
+            "name": "Dr. N Premkumar (AIDS)",
+            "department": "BME",
+            "class": "IV BE BME A"
+        },
+        {
+            "username": "advisor_bme_b",
+            "password": "adv_bme_pswd_b",
+            "name": "Dr. N Premkumar (AIDS)",
+            "department": "BME",
+            "class": "IV BE BME B"
+        },
+        {
+            "username": "advisor_bme_c",
+            "password": "adv_bme_pswd_c",
+            "name": "Dr. N Premkumar (AIDS)",
+            "department": "BME",
+            "class": "IV BE BME C"
+        }        
+    ]
+}

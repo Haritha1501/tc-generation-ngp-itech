@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TC Generator - Portal Home</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- FontAwesome for icons -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #1e3c72;
+            --primary-dark: #122548;
+            --primary-light: #2a5298;
+            --accent: #ff9f43;
+            --bg-gradient: linear-gradient(135deg, #f5f7fa 0%, #e4e8f0 100%);
+            --card-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+            --card-shadow-hover: 0 15px 40px rgba(30, 60, 114, 0.15);
+        }
+
+        body {
+            background: var(--bg-gradient);
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            min-height: 100vh;
+            color: #2c3e50;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Hero Banner Styling */
+        .hero-section {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+            color: #ffffff;
+            padding: 50px 0;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+        }
+
+        .hero-section::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -20%;
+            width: 100%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0) 70%);
+            transform: rotate(-15deg);
+        }
+
+        .hero-title {
+            font-weight: 800;
+            font-size: 2.2rem;
+            letter-spacing: -0.5px;
+            margin-bottom: 10px;
+        }
+
+        .hero-subtitle {
+            font-size: 1.1rem;
+            opacity: 0.9;
+            font-weight: 300;
+        }
+
+        /* Card Custom Styling */
+        .portal-card {
+            border: none;
+            border-radius: 16px;
+            background: #ffffff;
+            box-shadow: var(--card-shadow);
+            transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+            overflow: hidden;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .portal-card:hover {
+            transform: translateY(-8px);
+            box-shadow: var(--card-shadow-hover);
+        }
+
+        .portal-card-body {
+            padding: 30px;
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .portal-icon-wrapper {
+            width: 65px;
+            height: 65px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 20px;
+            font-size: 1.8rem;
+            transition: all 0.3s ease;
+        }
+
+        /* Blue Theme for Advisor */
+        .advisor-theme .portal-icon-wrapper {
+            background-color: rgba(30, 60, 114, 0.1);
+            color: var(--primary);
+        }
+        .advisor-theme .btn-portal {
+            background-color: var(--primary);
+            color: #ffffff;
+        }
+        .advisor-theme .btn-portal:hover {
+            background-color: var(--primary-dark);
+            transform: translateY(-1px);
+        }
+
+        /* Burgundy Theme for HOD */
+        .hod-theme .portal-icon-wrapper {
+            background-color: rgba(128, 0, 0, 0.1);
+            color: #800000;
+        }
+        .hod-theme .btn-portal {
+            background-color: #800000;
+            color: #ffffff;
+        }
+        .hod-theme .btn-portal:hover {
+            background-color: #5c0000;
+            transform: translateY(-1px);
+        }
+
+        /* Slate Theme for Principal */
+        .principal-theme .portal-icon-wrapper {
+            background-color: rgba(44, 62, 80, 0.1);
+            color: #2c3e50;
+        }
+        .principal-theme .btn-portal {
+            background-color: #2c3e50;
+            color: #ffffff;
+        }
+        .principal-theme .btn-portal:hover {
+            background-color: #1a252f;
+            transform: translateY(-1px);
+        }
+
+        .btn-portal {
+            border: none;
+            padding: 12px;
+            border-radius: 10px;
+            font-weight: 600;
+            transition: all 0.2s ease;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+        }
+
+        /* Registration Form Section */
+        .registration-card {
+            border: none;
+            border-radius: 20px;
+            box-shadow: var(--card-shadow);
+            background: #ffffff;
+            overflow: hidden;
+            margin-top: 40px;
+        }
+
+        .registration-header {
+            background: linear-gradient(135deg, var(--primary-light) 0%, var(--primary) 100%);
+            color: #ffffff;
+            padding: 25px 30px;
+        }
+
+        .registration-header h3 {
+            font-weight: 700;
+            margin-bottom: 5px;
+            font-size: 1.4rem;
+        }
+
+        .registration-body {
+            padding: 35px 30px;
+        }
+
+        .form-label {
+            font-weight: 600;
+            font-size: 0.9rem;
+            color: #57606f;
+        }
+
+        .form-control, .form-select {
+            border-radius: 10px;
+            padding: 12px 15px;
+            border: 1.5px solid #e1e8f0;
+            font-weight: 500;
+            transition: border-color 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .form-control:focus, .form-select:focus {
+            border-color: var(--primary-light);
+            box-shadow: 0 0 0 4px rgba(42, 82, 152, 0.15);
+        }
+
+        .btn-register {
+            background: linear-gradient(135deg, var(--accent) 0%, #ff7f50 100%);
+            border: none;
+            color: #ffffff;
+            padding: 14px;
+            border-radius: 10px;
+            font-weight: 700;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(255, 159, 67, 0.3);
+        }
+
+        .btn-register:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(255, 159, 67, 0.45);
+        }
+
+        .footer {
+            margin-top: auto;
+            background-color: #ffffff;
+            border-top: 1px solid #e1e8f0;
+            padding: 20px 0;
+            font-size: 0.85rem;
+            color: #747d8c;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Hero Section -->
+    <header class="hero-section text-center">
+        <div class="container">
+            <img src="/static/images/logo.png" alt="Institution Logo" class="mb-3" style="max-height: 90px; width: auto; object-fit: contain; filter: drop-shadow(0 2px 8px rgba(0,0,0,0.15));">
+            <h1 class="hero-title">Transfer Certificate Generator</h1>
+            <p class="hero-subtitle">Institutional TC Generation, Approval, and Digital Signature System</p>
+        </div>
+    </header>
+
+    <!-- Main Content Container -->
+    <main class="container my-5">
+        
+        <!-- Alerts for feedback -->
+        {% if error %}
+        <div class="alert alert-danger d-flex align-items-center alert-dismissible fade show shadow-sm mb-4 rounded-3" role="alert">
+            <i class="fa-solid fa-triangle-exclamation fa-lg me-3"></i>
+            <div>
+                <strong>Error:</strong> {{ error }}
+            </div>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+        {% endif %}
+
+        {% if success %}
+        <div class="alert alert-success d-flex align-items-center alert-dismissible fade show shadow-sm mb-4 rounded-3" role="alert">
+            <i class="fa-solid fa-circle-check fa-lg me-3"></i>
+            <div>
+                <strong>Success!</strong> {{ success }}
+            </div>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+        {% endif %}
+
+        <!-- Portals Grid -->
+        <h2 class="text-center fw-700 mb-4 h4 text-uppercase tracking-wider">Select Access Portal</h2>
+        <div class="row g-4 justify-content-center">
+            
+            <!-- Advisor Portal -->
+            <div class="col-md-4">
+                <div class="portal-card advisor-theme">
+                    <div class="portal-card-body">
+                        <div>
+                            <div class="portal-icon-wrapper">
+                                <i class="fa-solid fa-user-tie"></i>
+                            </div>
+                            <h3 class="h5 fw-bold mb-2">Advisor Portal</h3>
+                            <p class="text-muted fs-7">Manage student data, upload CSV details, match student photographs, and submit batches to the department head.</p>
+                        </div>
+                        <div class="d-grid mt-4">
+                            <a href="/login" class="btn btn-portal btn-lg" id="advisorPortalBtn">
+                                <i class="fa-solid fa-right-to-bracket me-2"></i> Enter Advisor Portal
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- HOD Portal -->
+            <div class="col-md-4">
+                <div class="portal-card hod-theme">
+                    <div class="portal-card-body">
+                        <div>
+                            <div class="portal-icon-wrapper">
+                                <i class="fa-solid fa-user-shield"></i>
+                            </div>
+                            <h3 class="h5 fw-bold mb-2">HOD Portal</h3>
+                            <p class="text-muted fs-7">Review submitted advisor batches, record student conducts, require parent meetings, and approve or reject certificates.</p>
+                        </div>
+                        <div class="d-grid mt-4">
+                            <a href="/hod/login" class="btn btn-portal btn-lg" id="hodPortalBtn">
+                                <i class="fa-solid fa-right-to-bracket me-2"></i> Enter HOD Portal
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Principal Portal -->
+            <div class="col-md-4">
+                <div class="portal-card principal-theme">
+                    <div class="portal-card-body">
+                        <div>
+                            <div class="portal-icon-wrapper">
+                                <i class="fa-solid fa-crown"></i>
+                            </div>
+                            <h3 class="h5 fw-bold mb-2">Principal Portal</h3>
+                            <p class="text-muted fs-7">Provide final verification on HOD approved batches, apply digital signature, and download verified final ZIP batches.</p>
+                        </div>
+                        <div class="d-grid mt-4">
+                            <a href="/principal/login" class="btn btn-portal btn-lg" id="principalPortalBtn">
+                                <i class="fa-solid fa-right-to-bracket me-2"></i> Enter Principal Portal
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Dynamic Class & Advisor Registration Form -->
+        <div class="row justify-content-center">
+            <div class="col-lg-10 col-xl-9">
+                <div class="registration-card shadow-sm">
+                    <div class="registration-header">
+                        <div class="d-flex align-items-center">
+                            <i class="fa-solid fa-user-plus fa-lg me-3 text-warning"></i>
+                            <div>
+                                <h3>Register New Class & Advisor</h3>
+                                <p class="mb-0 fs-7 opacity-85">Advisors must register their classes (e.g. 2024-2028-CSE-A) before using the portal.</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="registration-body">
+                        <form action="/register" method="post" id="registrationForm">
+                            <div class="row g-3">
+                                
+                                <div class="col-md-6">
+                                    <label for="name" class="form-label">Advisor Full Name</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text bg-white"><i class="fa-solid fa-signature text-secondary"></i></span>
+                                        <input type="text" class="form-control" id="name" name="name" placeholder="e.g. Mr. Yathavraj V" required>
+                                    </div>
+                                </div>
+
+                                <div class="col-md-6">
+                                    <label for="username" class="form-label">Username</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text bg-white"><i class="fa-solid fa-user text-secondary"></i></span>
+                                        <input type="text" class="form-control" id="username" name="username" placeholder="e.g. advisor_cse_new" required>
+                                    </div>
+                                </div>
+
+                                <div class="col-md-6">
+                                    <label for="password" class="form-label">Password</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text bg-white"><i class="fa-solid fa-lock text-secondary"></i></span>
+                                        <input type="password" class="form-control" id="password" name="password" placeholder="Enter password" required>
+                                    </div>
+                                </div>
+
+                                <!-- Class registration fields -->
+                                <div class="col-md-6">
+                                    <label for="batch" class="form-label">Batch (Academic Year Range)</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text bg-white"><i class="fa-solid fa-calendar-days text-secondary"></i></span>
+                                        <input type="text" class="form-control" id="batch" name="batch" placeholder="e.g. 2024-2028 or 2024-28" required>
+                                    </div>
+                                </div>
+
+                                <div class="col-md-6">
+                                    <label for="department" class="form-label">Department</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text bg-white"><i class="fa-solid fa-building-columns text-secondary"></i></span>
+                                        <select class="form-select" id="department" name="department" required>
+                                            <option value="" disabled selected>Select Department</option>
+                                            <option value="CSE">Computer Science & Eng. (CSE)</option>
+                                            <option value="IT">Information Technology (IT)</option>
+                                            <option value="ECE">Electronics & Comm. Eng. (ECE)</option>
+                                            <option value="EEE">Electrical & Electronics Eng. (EEE)</option>
+                                            <option value="AIDS">Artificial Intelligence & Data Science (AIDS)</option>
+                                            <option value="MECH">Mechanical Engineering (MECH)</option>
+                                            <option value="CIVIL">Civil Engineering (CIVIL)</option>
+                                            <option value="BME">Biomedical Engineering (BME)</option>
+                                            <option value="CSBS">Computer Science & Business Systems (CSBS)</option>
+                                            <option value="CS">CSE (Cyber Security) (CS)</option>
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <div class="col-md-6">
+                                    <label for="section" class="form-label">Section</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text bg-white"><i class="fa-solid fa-users-line text-secondary"></i></span>
+                                        <input type="text" class="form-control" id="section" name="section" placeholder="e.g. A, B or C" required>
+                                    </div>
+                                </div>
+
+                            </div>
+
+                            <div class="mt-4 d-grid">
+                                <button type="submit" class="btn btn-register btn-lg" id="submitRegisterBtn">
+                                    <i class="fa-solid fa-user-plus me-2"></i> Register Class & Advisor
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer text-center">
+        <div class="container">
+            <p class="mb-0">&copy; 2026 Transfer Certificate Generation & Management System. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <!-- Bootstrap Bundle JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

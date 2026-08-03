@@ -1,0 +1,604 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Advisor Dashboard - TC Generator</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- FontAwesome for icons -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: #f4f6f9;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            color: #333;
+        }
+        .navbar {
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .navbar-brand {
+            font-weight: 700;
+            letter-spacing: 0.5px;
+        }
+        .card {
+            border: none;
+            border-radius: 8px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.05);
+            background: #ffffff;
+            margin-bottom: 20px;
+        }
+        .card-header-navy {
+            background-color: #1e3c72;
+            color: white;
+            font-weight: 600;
+            border-top-left-radius: 8px;
+            border-top-right-radius: 8px;
+            padding: 15px 20px;
+        }
+        .stat-card {
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+        .stat-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        .stat-icon {
+            font-size: 2.5rem;
+            opacity: 0.85;
+        }
+        .student-thumb {
+            width: 45px;
+            height: 55px;
+            object-fit: cover;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+        }
+        .badge {
+            font-weight: 600;
+            padding: 6px 12px;
+            border-radius: 50px;
+        }
+        .btn-navy {
+            background-color: #1e3c72;
+            color: white;
+            border: none;
+        }
+        .btn-navy:hover {
+            background-color: #2a5298;
+            color: white;
+        }
+        .btn-navy:disabled {
+            background-color: #6c757d;
+            color: white;
+        }
+        .status-not-generated { background-color: #e9ecef; color: #495057; }
+        .status-generated { background-color: #cff4fc; color: #055160; }
+        .status-submitted { background-color: #fff3cd; color: #664d03; }
+        .status-approved { background-color: #d1e7dd; color: #0f5132; }
+        .status-rejected { background-color: #f8d7da; color: #842029; }
+        .preview-iframe {
+            width: 100%;
+            height: 70vh;
+            border: none;
+        }
+        .card-header-navy .nav-tabs .nav-link {
+            color: rgba(255, 255, 255, 0.75);
+            border: none;
+        }
+        .card-header-navy .nav-tabs .nav-link.active {
+            color: #1e3c72;
+            background-color: #ffffff;
+            border-radius: 4px 4px 0 0;
+        }
+        .card-header-navy .nav-tabs .nav-link:hover:not(.active) {
+            color: #ffffff;
+            background-color: rgba(255, 255, 255, 0.1);
+            border-radius: 4px 4px 0 0;
+        }
+    </style>
+</head>
+<body>
+
+<!-- Header Navbar -->
+<nav class="navbar navbar-expand-lg navbar-dark px-4 py-3">
+    <div class="container-fluid">
+        <a class="navbar-brand" href="#" id="navBrand">
+            <i class="fa-solid fa-graduation-cap me-2"></i> Dr. N.G.P. IT - TC Generator
+        </a>
+        <div class="d-flex align-items-center">
+            <span class="text-white me-3 d-none d-md-inline" id="advisorName">
+                <i class="fa-solid fa-user-tie me-1"></i> Advisor: <strong>{{ advisor.name }}</strong>
+            </span>
+            <a href="/logout" class="btn btn-outline-light btn-sm" id="logoutBtn">
+                <i class="fa-solid fa-right-from-bracket me-1"></i> Logout
+            </a>
+        </div>
+    </div>
+</nav>
+
+<div class="container py-4">
+    <!-- Class Info and Submission Status -->
+    <div class="row mb-2">
+        <div class="col-12">
+            {% if is_submitted %}
+            <div class="alert alert-warning d-flex align-items-center shadow-sm" role="alert" id="submissionStatusAlert">
+                <i class="fa-solid fa-lock fa-lg me-3"></i>
+                <div>
+                    <strong>Batch Frozen:</strong> This class has been submitted to the HOD on <strong>{{ submission.submitted_time }}</strong>. All modifications, CSV uploads, and certificate regeneration are disabled.
+                </div>
+            </div>
+            {% endif %}
+            
+            {% if submission_status == "Approved" %}
+            <div class="alert alert-success d-flex align-items-center shadow-sm" role="alert" id="approvalStatusAlert">
+                <i class="fa-solid fa-circle-check fa-lg me-3"></i>
+                <div>
+                    <strong>Approved by HOD:</strong> Transfer Certificates for this class have been approved by the HOD.
+                </div>
+            </div>
+            {% elif submission_status == "Rejected" %}
+            <div class="alert alert-danger d-flex align-items-center shadow-sm" role="alert" id="rejectionStatusAlert">
+                <i class="fa-solid fa-circle-xmark fa-lg me-3"></i>
+                <div>
+                    <strong>Rejected by HOD:</strong> This batch was rejected. Please review any issues and re-submit if needed (you can re-submit after clearing simulation).
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Class Details Header -->
+    <div class="card p-3 mb-4 shadow-sm bg-white">
+        <div class="row align-items-center">
+            <div class="col-md-8">
+                <h2 class="h4 mb-1 text-primary fw-bold">{{ advisor.class }}</h2>
+                <p class="text-muted mb-0">Department: <strong class="text-dark">{{ advisor.department }}</strong> | Academic Year: 2025 - 2026</p>
+            </div>
+            <div class="col-md-4 text-md-end mt-2 mt-md-0">
+                <span class="badge bg-secondary fs-6 shadow-sm">
+                    Class Advisor Workspace
+                </span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Stats Dashboard Counters -->
+    <div class="row mb-4">
+        <div class="col-md-2-4 col-sm-6 mb-3 col-lg-3 col-xl-2-4">
+            <div class="card stat-card text-center h-100 shadow-sm border-start border-primary border-4">
+                <div class="card-body p-3">
+                    <span class="text-muted text-uppercase fs-7 fw-bold d-block mb-1">Total Students</span>
+                    <h3 class="fw-bold mb-0 text-primary" id="statTotal">{{ stats.total_students }}</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-2-4 col-sm-6 mb-3 col-lg-3 col-xl-2-4">
+            <div class="card stat-card text-center h-100 shadow-sm border-start border-warning border-4">
+                <div class="card-body p-3">
+                    <span class="text-muted text-uppercase fs-7 fw-bold d-block mb-1">Pending</span>
+                    <h3 class="fw-bold mb-0 text-warning" id="statPending">{{ stats.pending }}</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-2-4 col-sm-6 mb-3 col-lg-3 col-xl-2-4">
+            <div class="card stat-card text-center h-100 shadow-sm border-start border-info border-4">
+                <div class="card-body p-3">
+                    <span class="text-muted text-uppercase fs-7 fw-bold d-block mb-1">Generated</span>
+                    <h3 class="fw-bold mb-0 text-info" id="statGenerated">{{ stats.generated }}</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-2-4 col-sm-6 mb-3 col-lg-3 col-xl-2-4">
+            <div class="card stat-card text-center h-100 shadow-sm border-start border-success border-4">
+                <div class="card-body p-3">
+                    <span class="text-muted text-uppercase fs-7 fw-bold d-block mb-1">Approved by HOD</span>
+                    <h3 class="fw-bold mb-0 text-success" id="statApproved">{{ stats.approved }}</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-2-4 col-sm-6 mb-3 col-lg-3 col-xl-2-4">
+            <div class="card stat-card text-center h-100 shadow-sm border-start border-danger border-4">
+                <div class="card-body p-3">
+                    <span class="text-muted text-uppercase fs-7 fw-bold d-block mb-1">Rejected</span>
+                    <h3 class="fw-bold mb-0 text-danger" id="statRejected">{{ stats.rejected }}</h3>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Left Side: Upload & Control Panel -->
+        <div class="col-lg-4">
+            <!-- Upload Panel -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-header card-header-navy">
+                    <i class="fa-solid fa-file-arrow-up me-2"></i> Upload Students Data
+                </div>
+                <div class="card-body">
+                    {% if upload_errors %}
+                    <div class="alert alert-danger shadow-sm" role="alert" id="uploadErrorsAlert">
+                        <h6 class="alert-heading fw-bold"><i class="fa-solid fa-circle-exclamation me-1"></i> Validation Failed:</h6>
+                        <ul class="mb-0 ps-3 fs-7" style="max-height: 150px; overflow-y: auto;">
+                            {% for err in upload_errors %}
+                            <li>{{ err }}</li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                    {% endif %}
+                    
+                    {% if upload_success %}
+                    <div class="alert alert-success shadow-sm d-flex align-items-center" role="alert" id="uploadSuccessAlert">
+                        <i class="fa-solid fa-circle-check fa-lg me-2"></i>
+                        <div>CSV parsed & validated successfully!</div>
+                    </div>
+                    {% endif %}
+
+                    <form action="/advisor/upload" method="post" enctype="multipart/form-data">
+                        <div class="mb-3">
+                            <label for="students_csv" class="form-label text-secondary fw-semibold">Students CSV File</label>
+                            <input class="form-control" type="file" id="students_csv" name="students_csv" accept=".csv" {% if is_submitted %}disabled{% endif %} required>
+                            <div class="form-text fs-7">Must contain all 20 standard TC fields (Register number, DOB format dd/mm/yyyy).</div>
+                        </div>
+                        
+                        <div class="mb-4">
+                            <label for="photos_zip" class="form-label text-secondary fw-semibold">Student Photos ZIP File (Optional)</label>
+                            <input class="form-control" type="file" id="photos_zip" name="photos_zip" accept=".zip" {% if is_submitted %}disabled{% endif %}>
+                            <div class="form-text fs-7">ZIP containing photos named <code>{register_number}.jpg</code>.</div>
+                        </div>
+                        
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-navy" {% if is_submitted %}disabled{% endif %} id="uploadBtn">
+                                <i class="fa-solid fa-upload me-2"></i> Upload & Validate CSV
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Dashboard Actions -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-header card-header-navy">
+                    <i class="fa-solid fa-sliders me-2"></i> Actions Panel
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-3">
+                        <!-- Generate Button -->
+                        <form action="/advisor/generate" method="post">
+                            <button type="submit" class="btn btn-primary w-100 py-2 fs-6 fw-semibold" 
+                                    {% if is_submitted or stats.total_students == 0 %}disabled{% endif %} id="generateCertificatesBtn">
+                                <i class="fa-solid fa-gears me-2"></i> Generate Certificates
+                            </button>
+                        </form>
+                        
+                        <!-- Submit to HOD Button -->
+                        <form action="/advisor/submit" method="post" onsubmit="return confirm('Are you sure you want to submit to the HOD? This will lock all student data and you will not be able to regenerate certificates.');">
+                            <button type="submit" class="btn btn-warning w-100 py-2 fs-6 fw-semibold text-dark" 
+                                    {% if is_submitted or stats.total_students == 0 or stats.generated == 0 %}disabled{% endif %} id="submitToHodBtn">
+                                <i class="fa-solid fa-paper-plane me-2"></i> Submit to HOD
+                            </button>
+                        </form>
+                        
+                        <!-- Download ZIP Button -->
+                        <a href="/advisor/download-zip" class="btn btn-success w-100 py-2 fs-6 fw-semibold {% if stats.total_students == 0 %}disabled{% endif %}" id="downloadZipBtn">
+                            <i class="fa-solid fa-file-zipper me-2"></i> Download Class ZIP
+                        </a>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Demo Testing / Simulator Panel -->
+            <div class="card shadow-sm border-warning mb-4">
+                <div class="card-header bg-warning text-dark fw-bold">
+                    <i class="fa-solid fa-flask me-2"></i> HOD Simulation Panel
+                </div>
+                <div class="card-body">
+                    <p class="fs-7 text-muted">Use this to simulate HOD feedback (updates students' statuses to test stats counts and approval states):</p>
+                    <div class="d-flex gap-2">
+                        <form action="/advisor/simulate-hod" method="post" class="flex-grow-1">
+                            <input type="hidden" name="action" value="approve">
+                            <button type="submit" class="btn btn-outline-success btn-sm w-100" {% if not is_submitted %}disabled{% endif %} id="simApproveBtn">
+                                <i class="fa-solid fa-check me-1"></i> Approve Batch
+                            </button>
+                        </form>
+                        <form action="/advisor/simulate-hod" method="post" class="flex-grow-1">
+                            <input type="hidden" name="action" value="reject">
+                            <button type="submit" class="btn btn-outline-danger btn-sm w-100" {% if not is_submitted %}disabled{% endif %} id="simRejectBtn">
+                                <i class="fa-solid fa-xmark me-1"></i> Reject Batch
+                            </button>
+                        </form>
+                    </div>
+                    {% if is_submitted %}
+                    <div class="mt-2 d-grid">
+                        <form action="/advisor/simulate-hod" method="post">
+                            <input type="hidden" name="action" value="reset">
+                            <button type="submit" class="btn btn-outline-secondary btn-sm w-100" id="simResetBtn">
+                                <i class="fa-solid fa-rotate-left me-1"></i> Unfreeze (Reset Submission)
+                            </button>
+                        </form>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Side: Student Columns -->
+        <div class="col-lg-8">
+            {% if not students %}
+            <div class="card shadow-sm h-100">
+                <div class="card-header card-header-navy d-flex justify-content-between align-items-center">
+                    <span><i class="fa-solid fa-list me-2"></i> Student Certificates List</span>
+                    <span class="badge bg-light text-navy">0 Students</span>
+                </div>
+                <div class="card-body p-0">
+                    <div class="text-center py-5">
+                        <i class="fa-solid fa-users-slash fa-3x text-secondary mb-3"></i>
+                        <h5>No student data loaded</h5>
+                        <p class="text-muted px-4">Please upload a valid student CSV file to start generating and managing Transfer Certificates.</p>
+                    </div>
+                </div>
+            </div>
+            {% else %}
+            <div class="card shadow-sm h-100">
+                <div class="card-header card-header-navy d-flex justify-content-between align-items-center">
+                    <span><i class="fa-solid fa-list me-2"></i> Student Certificates</span>
+                    <ul class="nav nav-tabs card-header-tabs border-bottom-0" id="studentTab" role="tablist">
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link active" id="all-tab" data-bs-toggle="tab" data-bs-target="#all-pane" type="button" role="tab" aria-controls="all-pane" aria-selected="true">
+                                All ({{ students|length }})
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="pending-tab" data-bs-toggle="tab" data-bs-target="#pending-pane" type="button" role="tab" aria-controls="pending-pane" aria-selected="false">
+                                Pending
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="approved-tab" data-bs-toggle="tab" data-bs-target="#approved-pane" type="button" role="tab" aria-controls="approved-pane" aria-selected="false">
+                                Approved
+                            </button>
+                        </li>
+                    </ul>
+                </div>
+                <div class="card-body p-0">
+                    <div class="tab-content" id="studentTabContent">
+                        <!-- ALL TAB -->
+                        <div class="tab-pane fade show active" id="all-pane" role="tabpanel" aria-labelledby="all-tab">
+                            <div class="table-responsive" style="max-height: 70vh; overflow-y: auto;">
+                                <table class="table table-hover align-middle mb-0">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th class="ps-3" style="width: 80px;">Photo</th>
+                                            <th>Register No</th>
+                                            <th>Student Name</th>
+                                            <th>Status</th>
+                                            <th class="text-center" style="min-width: 250px;">Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for student in students %}
+                                        <tr class="student-row" data-reg="{{ student.register_number }}" data-name="{{ student.student_name }}">
+                                            <td class="ps-3">
+                                                {% if student.status != "Not Generated" and student.student_photo %}
+                                                    <img src="/generated/advisor/{{ advisor.department }}/{{ advisor.class|replace(' ', '_') }}/preview/{{ student.register_number }}.jpg" class="student-thumb" onerror="this.onerror=null; this.src='/static/images/principal.jpg';" alt="Photo">
+                                                {% else %}
+                                                    <div class="student-thumb d-flex align-items-center justify-content-center bg-light text-secondary" style="border: 1px solid #dee2e6; border-radius: 4px;">
+                                                        <i class="fa-solid fa-user"></i>
+                                                    </div>
+                                                {% endif %}
+                                            </td>
+                                            <td><code class="text-dark fw-bold">{{ student.register_number }}</code></td>
+                                            <td><strong>{{ student.student_name }}</strong></td>
+                                            <td>
+                                                {% if student.status == "Not Generated" %}
+                                                    <span class="badge status-not-generated"><i class="fa-solid fa-circle-dot"></i> Not Generated</span>
+                                                {% elif student.status == "Generated" %}
+                                                    <span class="badge status-generated"><i class="fa-solid fa-circle-info"></i> Generated</span>
+                                                {% elif student.status == "Submitted to HOD" %}
+                                                    <span class="badge status-submitted"><i class="fa-solid fa-hourglass-half"></i> Submitted to HOD</span>
+                                                {% elif student.status == "Approved" %}
+                                                    <span class="badge status-approved"><i class="fa-solid fa-circle-check"></i> Approved</span>
+                                                {% elif student.status == "Rejected" %}
+                                                    <span class="badge status-rejected"><i class="fa-solid fa-circle-xmark"></i> Rejected</span>
+                                                {% endif %}
+                                            </td>
+                                            <td class="text-center">
+                                                <div class="d-inline-flex gap-1">
+                                                    {% if student.status == "Not Generated" %}
+                                                        <button class="btn btn-outline-secondary btn-sm" disabled><i class="fa-solid fa-eye me-1"></i> Preview</button>
+                                                        <button class="btn btn-outline-secondary btn-sm" disabled><i class="fa-solid fa-file-pdf me-1"></i> PDF</button>
+                                                    {% else %}
+                                                        <button class="btn btn-outline-primary btn-sm btn-preview"
+                                                                data-reg="{{ student.register_number }}"
+                                                                data-name="{{ student.student_name }}">
+                                                            <i class="fa-solid fa-eye me-1"></i> Preview
+                                                        </button>
+                                                        <a href="/advisor/download-pdf/{{ student.register_number }}" class="btn btn-outline-success btn-sm">
+                                                            <i class="fa-solid fa-file-pdf me-1"></i> PDF
+                                                        </a>
+                                                        <a href="/advisor/download-html/{{ student.register_number }}" class="btn btn-outline-info btn-sm">
+                                                            <i class="fa-solid fa-code me-1"></i> HTML
+                                                        </a>
+                                                    {% endif %}
+                                                </div>
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <!-- PENDING TAB -->
+                        <div class="tab-pane fade" id="pending-pane" role="tabpanel" aria-labelledby="pending-tab">
+                            <div class="table-responsive" style="max-height: 70vh; overflow-y: auto;">
+                                <table class="table table-hover align-middle mb-0">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th class="ps-3" style="width: 80px;">Photo</th>
+                                            <th>Register No</th>
+                                            <th>Student Name</th>
+                                            <th>Status</th>
+                                            <th class="text-center" style="min-width: 250px;">Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for student in students %}
+                                        {% if student.status != "Approved" %}
+                                        <tr class="student-row" data-reg="{{ student.register_number }}" data-name="{{ student.student_name }}">
+                                            <td class="ps-3">
+                                                {% if student.status != "Not Generated" and student.student_photo %}
+                                                    <img src="/generated/advisor/{{ advisor.department }}/{{ advisor.class|replace(' ', '_') }}/preview/{{ student.register_number }}.jpg" class="student-thumb" onerror="this.onerror=null; this.src='/static/images/principal.jpg';" alt="Photo">
+                                                {% else %}
+                                                    <div class="student-thumb d-flex align-items-center justify-content-center bg-light text-secondary" style="border: 1px solid #dee2e6; border-radius: 4px;">
+                                                        <i class="fa-solid fa-user"></i>
+                                                    </div>
+                                                {% endif %}
+                                            </td>
+                                            <td><code class="text-dark fw-bold">{{ student.register_number }}</code></td>
+                                            <td><strong>{{ student.student_name }}</strong></td>
+                                            <td>
+                                                {% if student.status == "Not Generated" %}
+                                                    <span class="badge status-not-generated"><i class="fa-solid fa-circle-dot"></i> Not Generated</span>
+                                                {% elif student.status == "Generated" %}
+                                                    <span class="badge status-generated"><i class="fa-solid fa-circle-info"></i> Generated</span>
+                                                {% elif student.status == "Submitted to HOD" %}
+                                                    <span class="badge status-submitted"><i class="fa-solid fa-hourglass-half"></i> Submitted to HOD</span>
+                                                {% elif student.status == "Rejected" %}
+                                                    <span class="badge status-rejected"><i class="fa-solid fa-circle-xmark"></i> Rejected</span>
+                                                {% endif %}
+                                            </td>
+                                            <td class="text-center">
+                                                <div class="d-inline-flex gap-1">
+                                                    {% if student.status == "Not Generated" %}
+                                                        <button class="btn btn-outline-secondary btn-sm" disabled><i class="fa-solid fa-eye me-1"></i> Preview</button>
+                                                        <button class="btn btn-outline-secondary btn-sm" disabled><i class="fa-solid fa-file-pdf me-1"></i> PDF</button>
+                                                    {% else %}
+                                                        <button class="btn btn-outline-primary btn-sm btn-preview"
+                                                                data-reg="{{ student.register_number }}"
+                                                                data-name="{{ student.student_name }}">
+                                                            <i class="fa-solid fa-eye me-1"></i> Preview
+                                                        </button>
+                                                        <a href="/advisor/download-pdf/{{ student.register_number }}" class="btn btn-outline-success btn-sm">
+                                                            <i class="fa-solid fa-file-pdf me-1"></i> PDF
+                                                        </a>
+                                                        <a href="/advisor/download-html/{{ student.register_number }}" class="btn btn-outline-info btn-sm">
+                                                            <i class="fa-solid fa-code me-1"></i> HTML
+                                                        </a>
+                                                    {% endif %}
+                                                </div>
+                                            </td>
+                                        </tr>
+                                        {% endif %}
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <!-- APPROVED TAB -->
+                        <div class="tab-pane fade" id="approved-pane" role="tabpanel" aria-labelledby="approved-tab">
+                            <div class="table-responsive" style="max-height: 70vh; overflow-y: auto;">
+                                <table class="table table-hover align-middle mb-0">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th class="ps-3" style="width: 80px;">Photo</th>
+                                            <th>Register No</th>
+                                            <th>Student Name</th>
+                                            <th>Status</th>
+                                            <th class="text-center" style="min-width: 250px;">Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for student in students %}
+                                        {% if student.status == "Approved" %}
+                                        <tr class="student-row" data-reg="{{ student.register_number }}" data-name="{{ student.student_name }}">
+                                            <td class="ps-3">
+                                                {% if student.student_photo %}
+                                                    <img src="/generated/advisor/{{ advisor.department }}/{{ advisor.class|replace(' ', '_') }}/preview/{{ student.register_number }}.jpg" class="student-thumb" onerror="this.onerror=null; this.src='/static/images/principal.jpg';" alt="Photo">
+                                                {% else %}
+                                                    <div class="student-thumb d-flex align-items-center justify-content-center bg-light text-secondary" style="border: 1px solid #dee2e6; border-radius: 4px;">
+                                                        <i class="fa-solid fa-user"></i>
+                                                    </div>
+                                                {% endif %}
+                                            </td>
+                                            <td><code class="text-dark fw-bold">{{ student.register_number }}</code></td>
+                                            <td><strong>{{ student.student_name }}</strong></td>
+                                            <td>
+                                                <span class="badge status-approved"><i class="fa-solid fa-circle-check"></i> Approved</span>
+                                            </td>
+                                            <td class="text-center">
+                                                <div class="d-inline-flex gap-1">
+                                                    <button class="btn btn-outline-primary btn-sm btn-preview"
+                                                            data-reg="{{ student.register_number }}"
+                                                            data-name="{{ student.student_name }}">
+                                                        <i class="fa-solid fa-eye me-1"></i> Preview
+                                                    </button>
+                                                    <a href="/advisor/download-pdf/{{ student.register_number }}" class="btn btn-outline-success btn-sm">
+                                                        <i class="fa-solid fa-file-pdf me-1"></i> PDF
+                                                    </a>
+                                                    <a href="/advisor/download-html/{{ student.register_number }}" class="btn btn-outline-info btn-sm">
+                                                        <i class="fa-solid fa-code me-1"></i> HTML
+                                                    </a>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                        {% endif %}
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Preview Modal -->
+<div class="modal fade" id="previewModal" tabindex="-1" aria-labelledby="previewModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header card-header-navy">
+                <h5 class="modal-title" id="previewModalLabel"><i class="fa-solid fa-file-invoice me-2"></i> Certificate Preview</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-0">
+                <iframe id="previewFrame" class="preview-iframe" src="about:blank"></iframe>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close Preview</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Bootstrap Bundle JS -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const previewModal = new bootstrap.Modal(document.getElementById('previewModal'));
+        const previewFrame = document.getElementById('previewFrame');
+        const previewTitle = document.getElementById('previewModalLabel');
+        
+        document.querySelectorAll('.btn-preview').forEach(button => {
+            button.addEventListener('click', function() {
+                const reg = this.getAttribute('data-reg');
+                const name = this.getAttribute('data-name');
+                previewTitle.innerHTML = `<i class="fa-solid fa-file-invoice me-2"></i> Certificate Preview - ${name} (${reg})`;
+                previewFrame.src = `/advisor/preview/html/{{ advisor.department }}/{{ advisor.class|replace(' ', '_') }}/${reg}`;
+                previewModal.show();
+            });
+        });
+        
+        // Reset iframe source on modal close to stop content rendering
+        document.getElementById('previewModal').addEventListener('hidden.bs.modal', function () {
+            previewFrame.src = "about:blank";
+        });
+    });
+</script>
+</body>
+</html>
