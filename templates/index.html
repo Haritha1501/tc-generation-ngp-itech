@@ -144,6 +144,20 @@
             transform: translateY(-1px);
         }
 
+        /* Teal/Emerald Theme for Office */
+        .office-theme .portal-icon-wrapper {
+            background-color: rgba(16, 185, 129, 0.1);
+            color: #059669;
+        }
+        .office-theme .btn-portal {
+            background-color: #059669;
+            color: #ffffff;
+        }
+        .office-theme .btn-portal:hover {
+            background-color: #047857;
+            transform: translateY(-1px);
+        }
+
         .btn-portal {
             border: none;
             padding: 12px;
@@ -264,7 +278,7 @@
         <div class="row g-4 justify-content-center">
             
             <!-- Advisor Portal -->
-            <div class="col-md-4">
+            <div class="col-md-6 col-lg-3">
                 <div class="portal-card advisor-theme">
                     <div class="portal-card-body">
                         <div>
@@ -272,11 +286,11 @@
                                 <i class="fa-solid fa-user-tie"></i>
                             </div>
                             <h3 class="h5 fw-bold mb-2">Advisor Portal</h3>
-                            <p class="text-muted fs-7">Manage student data, upload CSV details, match student photographs, and submit batches to the department head.</p>
+                            <p class="text-muted fs-7">Manage student data, upload CSV details, match student photographs, and submit batches to HOD.</p>
                         </div>
                         <div class="d-grid mt-4">
                             <a href="/login" class="btn btn-portal btn-lg" id="advisorPortalBtn">
-                                <i class="fa-solid fa-right-to-bracket me-2"></i> Enter Advisor Portal
+                                <i class="fa-solid fa-right-to-bracket me-2"></i> Enter Advisor
                             </a>
                         </div>
                     </div>
@@ -284,7 +298,7 @@
             </div>
 
             <!-- HOD Portal -->
-            <div class="col-md-4">
+            <div class="col-md-6 col-lg-3">
                 <div class="portal-card hod-theme">
                     <div class="portal-card-body">
                         <div>
@@ -292,11 +306,11 @@
                                 <i class="fa-solid fa-user-shield"></i>
                             </div>
                             <h3 class="h5 fw-bold mb-2">HOD Portal</h3>
-                            <p class="text-muted fs-7">Review submitted advisor batches, record student conducts, require parent meetings, and approve or reject certificates.</p>
+                            <p class="text-muted fs-7">Review submitted advisor batches, record student conducts, require parent meetings, approve/reject certificates.</p>
                         </div>
                         <div class="d-grid mt-4">
                             <a href="/hod/login" class="btn btn-portal btn-lg" id="hodPortalBtn">
-                                <i class="fa-solid fa-right-to-bracket me-2"></i> Enter HOD Portal
+                                <i class="fa-solid fa-right-to-bracket me-2"></i> Enter HOD
                             </a>
                         </div>
                     </div>
@@ -304,7 +318,7 @@
             </div>
 
             <!-- Principal Portal -->
-            <div class="col-md-4">
+            <div class="col-md-6 col-lg-3">
                 <div class="portal-card principal-theme">
                     <div class="portal-card-body">
                         <div>
@@ -312,11 +326,31 @@
                                 <i class="fa-solid fa-crown"></i>
                             </div>
                             <h3 class="h5 fw-bold mb-2">Principal Portal</h3>
-                            <p class="text-muted fs-7">Provide final verification on HOD approved batches, apply digital signature, and download verified final ZIP batches.</p>
+                            <p class="text-muted fs-7">Provide final verification on approved batches, apply digital signature, and issue final ZIP certificates.</p>
                         </div>
                         <div class="d-grid mt-4">
                             <a href="/principal/login" class="btn btn-portal btn-lg" id="principalPortalBtn">
-                                <i class="fa-solid fa-right-to-bracket me-2"></i> Enter Principal Portal
+                                <i class="fa-solid fa-right-to-bracket me-2"></i> Enter Principal
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Office Portal -->
+            <div class="col-md-6 col-lg-3">
+                <div class="portal-card office-theme">
+                    <div class="portal-card-body">
+                        <div>
+                            <div class="portal-icon-wrapper">
+                                <i class="fa-solid fa-building-user"></i>
+                            </div>
+                            <h3 class="h5 fw-bold mb-2">Office Portal</h3>
+                            <p class="text-muted fs-7">Upload department-wise batches directly, manage approved TCs, track rejections, and notify Advisors.</p>
+                        </div>
+                        <div class="d-grid mt-4">
+                            <a href="/office/login" class="btn btn-portal btn-lg" id="officePortalBtn">
+                                <i class="fa-solid fa-right-to-bracket me-2"></i> Enter Office
                             </a>
                         </div>
                     </div>

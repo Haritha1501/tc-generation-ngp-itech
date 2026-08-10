@@ -155,15 +155,86 @@
             </div>
         </div>
 
-        <!-- Pending classes table -->
-        <div class="col-lg-8">
-            <div class="card shadow-sm">
-                <div class="card-header card-header-slate d-flex justify-content-between align-items-center">
-                    <span><i class="fa-solid fa-file-invoice me-2"></i> Submitted Batches Queue</span>
-                    <span class="badge bg-light text-dark">{{ batches|length }} Batches</span>
+        <!-- Office Direct Requests Section -->
+        <div class="col-lg-12 mb-4">
+            <div class="card shadow-sm" style="border-left: 4px solid #059669 !important;">
+                <div class="card-header bg-white d-flex justify-content-between align-items-center py-3">
+                    <span class="fw-bold fs-6 text-dark" id="officeDirectRequestsHeader">
+                        <i class="fa-solid fa-building-user me-2" style="color: #059669;"></i> Office Direct Requests — Pending Approval
+                    </span>
+                    <span class="badge bg-success-subtle text-success border border-success-subtle px-3 py-2 fs-7">{{ office_direct_batches|length }} Special Cases</span>
                 </div>
                 <div class="card-body p-0">
-                    {% if not batches %}
+                    {% if not office_direct_batches %}
+                    <div class="text-center py-4 text-muted fs-7">
+                        <i class="fa-solid fa-circle-check text-success fa-2x mb-2 d-block"></i>
+                        No pending special/urgent requests from Office.
+                    </div>
+                    {% else %}
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th class="ps-3">Class / Batch</th>
+                                    <th>Dept</th>
+                                    <th>Source / Uploaded By</th>
+                                    <th class="text-center">Students</th>
+                                    <th>Status</th>
+                                    <th class="text-center" style="width: 220px;">Review & Decision</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for b in office_direct_batches %}
+                                <tr class="batch-row" data-class="{{ b.class }}" data-dept="{{ b.department }}">
+                                    <td class="ps-3">
+                                        <strong class="text-dark">{{ b.class }}</strong>
+                                        <div class="fs-7 text-muted">{{ b.submission_time }}</div>
+                                    </td>
+                                    <td><span class="badge bg-secondary">{{ b.department }}</span></td>
+                                    <td>
+                                        <span class="badge bg-light text-dark border">
+                                            <i class="fa-solid fa-building-user me-1" style="color: #059669;"></i> {{ b.advisor }}
+                                        </span>
+                                    </td>
+                                    <td class="text-center"><strong>{{ b.student_count }}</strong></td>
+                                    <td>
+                                        {% if b.principal_status == "Pending Principal" %}
+                                        <span class="badge status-submitted"><i class="fa-solid fa-hourglass-half me-1"></i> Pending Approval</span>
+                                        {% elif b.principal_status == "Approved" %}
+                                        <span class="badge status-approved"><i class="fa-solid fa-circle-check me-1"></i> Approved</span>
+                                        {% elif b.principal_status == "Rejected" %}
+                                        <span class="badge status-rejected"><i class="fa-solid fa-circle-xmark me-1"></i> Rejected</span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="text-center">
+                                        <a href="/principal/class/{{ b.department }}/{{ b.class|replace(' ', '_') }}" class="btn btn-slate btn-sm">
+                                            <i class="fa-solid fa-signature me-1"></i> Review & Decision
+                                        </a>
+                                        {% if b.principal_status == "Approved" %}
+                                        <a href="/principal/download-final-zip/{{ b.department }}/{{ b.class|replace(' ', '_') }}" class="btn btn-outline-success btn-sm mt-1 mt-md-0" title="Download Final Signed ZIP">
+                                            <i class="fa-solid fa-file-zipper"></i> ZIP
+                                        </a>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Submitted Batches Queue (HOD Approved Advisor Batches) -->
+        <div class="col-lg-12">
+            <div class="card shadow-sm">
+                <div class="card-header card-header-slate d-flex justify-content-between align-items-center">
+                    <span><i class="fa-solid fa-file-invoice me-2"></i> Advisor Batches Queue (HOD Approved)</span>
+                    <span class="badge bg-light text-dark">{{ advisor_batches|length }} Batches</span>
+                </div>
+                <div class="card-body p-0">
+                    {% if not advisor_batches %}
                     <div class="text-center py-5">
                         <i class="fa-solid fa-inbox fa-3x text-secondary mb-3"></i>
                         <h5>No class submissions from HODs</h5>
@@ -183,7 +254,7 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                {% for b in batches %}
+                                {% for b in advisor_batches %}
                                 <tr class="batch-row" data-class="{{ b.class }}" data-dept="{{ b.department }}">
                                     <td class="ps-3">
                                         <strong>{{ b.class }}</strong>
@@ -228,6 +299,7 @@
                 </div>
             </div>
         </div>
+
     </div>
 </div>
 

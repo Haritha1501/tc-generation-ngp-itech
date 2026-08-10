@@ -164,6 +164,25 @@
         </div>
     </div>
 
+    <!-- Office Rejection Notifications Alert -->
+    {% if notifications %}
+    <div class="alert alert-danger shadow-sm mb-4 border-start border-danger border-4 rounded-3">
+        <div class="d-flex align-items-center mb-2">
+            <i class="fa-solid fa-bell text-danger fa-lg me-2"></i>
+            <h5 class="alert-heading mb-0 fw-bold text-danger">Rejection Notifications from Central Office</h5>
+        </div>
+        <ul class="mb-0 ps-3">
+            {% for n in notifications %}
+            <li class="mb-1 fs-7">
+                <strong>{{ n.student_name }}</strong> (Identifier: <code>{{ n.identifier }}</code>) — 
+                <span class="text-dark fw-semibold">Reason:</span> <span class="text-danger fw-bold">{{ n.rejection_reason }}</span>
+                <small class="text-muted ms-2">({{ n.sent_at }})</small>
+            </li>
+            {% endfor %}
+        </ul>
+    </div>
+    {% endif %}
+
     <!-- Stats Dashboard Counters -->
     <div class="row mb-4">
         <div class="col-md-2-4 col-sm-6 mb-3 col-lg-3 col-xl-2-4">

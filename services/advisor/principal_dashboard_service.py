@@ -133,13 +133,18 @@ def get_batches_for_principal():
                                 sub_time = hod_data.get("last_updated") or ""
                                 student_count = len(hod_data.get("students", []))
                                 
+                                workflow_type = "Advisor Upload"
                                 if submission_file.exists():
                                     with open(submission_file, "r") as sf:
                                         sub_meta = json.load(sf)
                                         advisor_name = sub_meta.get("advisor", advisor_name)
                                         sub_time = sub_meta.get("submitted_time", sub_time)
                                         student_count = sub_meta.get("student_count", student_count)
+                                        workflow_type = sub_meta.get("workflow_type", workflow_type)
                                         
+                                if hod_data.get("workflow_type"):
+                                    workflow_type = hod_data["workflow_type"]
+
                                 # Check if Principal has already approved
                                 p_meta_file = get_principal_metadata_file(department, class_name)
                                 p_status = "Pending Principal"
@@ -159,10 +164,12 @@ def get_batches_for_principal():
                                     "submission_time": sub_time,
                                     "hod_status": hod_status,
                                     "principal_status": p_status,
-                                    "approval_time": p_time
+                                    "approval_time": p_time,
+                                    "workflow_type": workflow_type
                                 })
                         except Exception:
                             pass
+
                             
     return batches
 

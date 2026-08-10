@@ -1,0 +1,9 @@
+{
+    "office_users": [
+        {
+            "username": "office",
+            "password": "password123",
+            "name": "Central Office Administrator"
+        }
+    ]
+}

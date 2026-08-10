@@ -33,11 +33,37 @@ def init_db():
 def seed_users():
     db = SessionLocal()
     try:
+        # Ensure Office user exists even if database was previously seeded
+        office_user = db.query(DBUser).filter(DBUser.role == "office").first()
+        if not office_user:
+            office_path = Path("data/office.json")
+            if office_path.exists():
+                with open(office_path, "r", encoding="utf-8") as f:
+                    data = json.load(f)
+                for off in data.get("office_users", []):
+                    db_user = DBUser(
+                        username=off["username"],
+                        password=off["password"],
+                        name=off["name"],
+                        role="office"
+                    )
+                    db.add(db_user)
+            else:
+                db_user = DBUser(
+                    username="office",
+                    password="password123",
+                    name="Central Office Administrator",
+                    role="office"
+                )
+                db.add(db_user)
+            db.commit()
+
         # Check if users table is empty
         if db.query(DBUser).first() is not None:
             return
             
         print("Seeding users from JSON files...")
+
         
         # Seed Advisors
         advisors_path = Path("data/advisors.json")
@@ -84,6 +110,29 @@ def seed_users():
                 )
                 db.add(db_user)
                 
+        # Seed Office Users
+        office_path = Path("data/office.json")
+        if office_path.exists():
+            with open(office_path, "r", encoding="utf-8") as f:
+                data = json.load(f)
+            for off in data.get("office_users", []):
+                db_user = DBUser(
+                    username=off["username"],
+                    password=off["password"],
+                    name=off["name"],
+                    role="office"
+                )
+                db.add(db_user)
+        else:
+            # Fallback default office user if office.json is missing
+            db_user = DBUser(
+                username="office",
+                password="password123",
+                name="Central Office Administrator",
+                role="office"
+            )
+            db.add(db_user)
+
         db.commit()
         print("Seeding complete.")
     except Exception as e:
@@ -91,3 +140,4 @@ def seed_users():
         db.rollback()
     finally:
         db.close()
+

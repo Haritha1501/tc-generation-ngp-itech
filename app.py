@@ -51,6 +51,17 @@ from services.advisor.principal_dashboard_service import (
     generate_final_zip,
     write_audit_log
 )
+from services.office.notification_service import (
+    send_rejection_notification,
+    get_notifications_for_advisor
+)
+from services.office.office_dashboard_service import (
+    get_all_batches,
+    get_office_stats,
+    get_all_rejected_students,
+    submit_office_batch_to_principal
+)
+
 
 import os
 
@@ -334,6 +345,13 @@ def advisor_dashboard(request: Request):
                 submission_metadata = json.load(f)
                 submission_status = submission_metadata.get("status", "Submitted to HOD")
 
+    # Retrieve notifications for this advisor
+    notifications = get_notifications_for_advisor(
+        advisor_username=advisor["username"],
+        department=dept,
+        class_name=class_name
+    )
+
     return templates.TemplateResponse(
         request=request,
         name="advisor_dashboard.html",
@@ -346,9 +364,11 @@ def advisor_dashboard(request: Request):
             "submission": submission_metadata,
             "submission_status": submission_status,
             "upload_errors": upload_errors,
-            "upload_success": upload_success
+            "upload_success": upload_success,
+            "notifications": notifications
         }
     )
+
 
 @app.post("/advisor/upload")
 def upload_csv(
@@ -560,17 +580,49 @@ def download_class_zip(request: Request):
         filename=download_filename
     )
 
+def get_authorized_user(request: Request):
+    """
+    Returns logged-in user dict if any of office, principal, hod, or advisor session exists.
+    Otherwise returns None.
+    """
+    for role_key in ["office", "principal", "hod", "advisor"]:
+        user = request.session.get(role_key)
+        if user:
+            return user
+    return None
+
+@app.get("/tc/download-pdf/{department}/{class_name}/{register_number}")
 @app.get("/advisor/download-pdf/{register_number}")
-def download_pdf(request: Request, register_number: str):
-    advisor = request.session.get("advisor")
-    if not advisor:
+def download_pdf(
+    request: Request,
+    register_number: str,
+    department: str = None,
+    class_name: str = None
+):
+    user = get_authorized_user(request)
+    if not user:
         return RedirectResponse(url="/login")
         
-    dept = advisor["department"]
-    class_name = advisor["class"]
+    if not department and "department" in user:
+        department = user["department"]
+    if not class_name and "class" in user:
+        class_name = user["class"]
+    elif not class_name and "class_name" in user:
+        class_name = user["class_name"]
+        
+    if not department or not class_name:
+        raise HTTPException(status_code=400, detail="Department and Class Name are required.")
+        
+    real_class_name = class_name.replace("_", " ")
     
-    pdf_path = get_class_folder(dept, class_name) / "pdf" / f"{register_number}.pdf"
-    if not pdf_path.exists():
+    final_pdf = get_final_class_folder(department, real_class_name) / "pdf" / f"{register_number}.pdf"
+    advisor_pdf = get_class_folder(department, real_class_name) / "pdf" / f"{register_number}.pdf"
+    
+    if final_pdf.exists():
+        pdf_path = final_pdf
+    elif advisor_pdf.exists():
+        pdf_path = advisor_pdf
+    else:
         raise HTTPException(status_code=404, detail="PDF not found. Please generate certificates first.")
         
     return FileResponse(
@@ -579,26 +631,44 @@ def download_pdf(request: Request, register_number: str):
         filename=f"TC_{register_number}.pdf"
     )
 
+@app.get("/tc/download-html/{department}/{class_name}/{register_number}")
 @app.get("/advisor/download-html/{register_number}")
-def download_html(request: Request, register_number: str):
-    advisor = request.session.get("advisor")
-    if not advisor:
+def download_html(
+    request: Request,
+    register_number: str,
+    department: str = None,
+    class_name: str = None
+):
+    user = get_authorized_user(request)
+    if not user:
         return RedirectResponse(url="/login")
         
-    dept = advisor["department"]
-    class_name = advisor["class"]
+    if not department and "department" in user:
+        department = user["department"]
+    if not class_name and "class" in user:
+        class_name = user["class"]
+    elif not class_name and "class_name" in user:
+        class_name = user["class_name"]
+        
+    if not department or not class_name:
+        raise HTTPException(status_code=400, detail="Department and Class Name are required.")
+        
+    real_class_name = class_name.replace("_", " ")
     
-    html_path = get_class_folder(dept, class_name) / "html" / f"{register_number}.html"
-    if not html_path.exists():
+    final_html = get_final_class_folder(department, real_class_name) / "html" / f"{register_number}.html"
+    advisor_html = get_class_folder(department, real_class_name) / "html" / f"{register_number}.html"
+    
+    if final_html.exists():
+        html_path = final_html
+    elif advisor_html.exists():
+        html_path = advisor_html
+    else:
         raise HTTPException(status_code=404, detail="HTML not found. Please generate certificates first.")
         
     with open(html_path, "r", encoding="utf-8") as f:
         html_content = f.read()
         
-    # Get the directory of app.py for absolute resolution of app resources
     app_base_dir = Path(__file__).parent
-        
-    # Inject CSS inline
     css_path = app_base_dir / "static" / "css" / "style.css"
     if css_path.exists():
         with open(css_path, "r", encoding="utf-8") as f:
@@ -608,7 +678,6 @@ def download_html(request: Request, register_number: str):
             f'<style>\n{css_content}\n</style>'
         )
         
-    # Helper to convert local image to base64
     def to_base64(filepath: Path, mime: str) -> str:
         if filepath.exists():
             with open(filepath, "rb") as img_f:
@@ -616,7 +685,6 @@ def download_html(request: Request, register_number: str):
             return f"data:{mime};base64,{b64_data}"
         return ""
         
-    # Convert and replace static images using absolute paths
     for img_name, mime in [("watermark", "image/png"), ("logo", "image/png"), ("seal", "image/jpeg"), ("principal", "image/jpeg"), ("principal_design", "image/jpeg")]:
         img_b64 = ""
         for ext in ['.jpeg', '.jpg', '.png']:
@@ -629,20 +697,18 @@ def download_html(request: Request, register_number: str):
             for ext in ['.jpeg', '.jpg', '.png']:
                 html_content = html_content.replace(f"../../static/images/{img_name}{ext}", img_b64)
         
-    # Resolve student photo path dynamically from the HTML src attribute to handle custom names
     import re
     photo_frame_match = re.search(r'<div class="photo-frame">\s*<img\s+src="([^"]+)"', html_content)
     if photo_frame_match:
         photo_src = photo_frame_match.group(1)
-        # photo_src is like '../../static/images/727823TUCS001.jpg'
         photo_filename = photo_src.split('/')[-1]
         
-        class_dir = get_class_folder(dept, class_name)
-        photo_path = class_dir / "preview" / photo_filename
+        c_dir = get_class_folder(department, real_class_name)
+        photo_path = c_dir / "preview" / photo_filename
         
         if not photo_path.exists():
             for ext in ['.jpg', '.jpeg', '.png']:
-                p = class_dir / "preview" / f"{register_number}{ext}"
+                p = c_dir / "preview" / f"{register_number}{ext}"
                 if p.exists():
                     photo_path = p
                     break
@@ -662,36 +728,68 @@ def download_html(request: Request, register_number: str):
         headers={"Content-Disposition": f"attachment; filename=TC_{register_number}.html"}
     )
 
+PREVIEW_ONLY_CSS = """
+<style>
+img.principal-designation-img {
+    width: 175px;
+}
+.principal-sign {
+    position: absolute;
+    top: -6mm;
+    width: 36mm;
+    height: auto;
+    left: 50%;
+    transform: translateX(-50%);
+}
+</style>
+"""
+
+def inject_preview_styles(html_content: str) -> str:
+    """Injects preview-only CSS rules into the HTML string right before </head>."""
+    if "</head>" in html_content:
+        return html_content.replace("</head>", f"{PREVIEW_ONLY_CSS}\n</head>")
+    return html_content + PREVIEW_ONLY_CSS
+
+@app.get("/tc/preview/html/{department}/{class_name}/{register_number}", response_class=HTMLResponse)
 @app.get("/advisor/preview/html/{department}/{class_name}/{register_number}", response_class=HTMLResponse)
 def preview_html_in_browser(department: str, class_name: str, register_number: str, request: Request):
     """
-    Renders the generated student certificate HTML file in the browser,
-    dynamically fixing path references to static files so they load correctly inside the browser iframe.
+    Renders the generated student certificate HTML file in the browser for any authorized role.
+    If the student is approved by Principal, it loads the signed final HTML.
+    Otherwise, it loads the advisor-generated HTML.
     """
-    # Verify advisor authentication
-    advisor = request.session.get("advisor")
-    if not advisor:
+    user = get_authorized_user(request)
+    if not user:
         return HTMLResponse(content="<h3>Unauthorized</h3>", status_code=401)
         
-    class_dir = get_class_folder(department, class_name.replace("_", " "))
-    html_path = class_dir / "html" / f"{register_number}.html"
+    real_class_name = class_name.replace("_", " ")
     
-    if not html_path.exists():
+    final_dir = get_final_class_folder(department, real_class_name)
+    final_html = final_dir / "html" / f"{register_number}.html"
+    
+    class_dir = get_class_folder(department, real_class_name)
+    advisor_html = class_dir / "html" / f"{register_number}.html"
+    
+    if final_html.exists():
+        html_path = final_html
+        preview_photo_prefix = f"/generated/final/{department}/{class_name}/preview/"
+    elif advisor_html.exists():
+        html_path = advisor_html
+        preview_photo_prefix = f"/generated/advisor/{department}/{class_name}/preview/"
+    else:
         return HTMLResponse(content="<h3>Certificate HTML not generated yet.</h3>", status_code=404)
         
-    # Read HTML file and fix relative paths back to static paths so browser resolves them
     with open(html_path, "r", encoding="utf-8") as f:
         html_content = f.read()
         
-    # Fix style.css and image path references back to FastAPI mount paths
     html_content = html_content.replace("../../static/", "/static/")
+    html_content = html_content.replace("../static/", "/static/")
+    html_content = html_content.replace("../preview/", preview_photo_prefix)
     
-    # Fix student photo URL
-    # Replace relative preview references to point to the FastAPI static mount `/generated/...`
-    class_path_uri = f"/generated/advisor/{department}/{class_name}/preview/"
-    html_content = html_content.replace("../preview/", class_path_uri)
-    
+    html_content = inject_preview_styles(html_content)
     return HTMLResponse(content=html_content)
+
+
 
 # ================= HOD SIMULATOR =================
 
@@ -1019,6 +1117,7 @@ def hod_preview_html_in_browser(department: str, class_name: str, register_numbe
     class_path_uri = f"/generated/advisor/{department}/{class_name}/preview/"
     html_content = html_content.replace("../preview/", class_path_uri)
     
+    html_content = inject_preview_styles(html_content)
     return HTMLResponse(content=html_content)
 
 
@@ -1066,6 +1165,9 @@ def principal_dashboard(request: Request):
     batches = get_batches_for_principal()
     stats = get_principal_stats()
     
+    office_direct_batches = [b for b in batches if b.get("workflow_type") == "Office Direct Upload"]
+    advisor_batches = [b for b in batches if b.get("workflow_type") != "Office Direct Upload"]
+    
     return templates.TemplateResponse(
         request=request,
         name="principal_dashboard.html",
@@ -1073,9 +1175,12 @@ def principal_dashboard(request: Request):
             "request": request,
             "principal": principal,
             "batches": batches,
+            "office_direct_batches": office_direct_batches,
+            "advisor_batches": advisor_batches,
             "stats": stats
         }
     )
+
 
 @app.get("/principal/class/{department}/{class_name}")
 def principal_class_detail(request: Request, department: str, class_name: str):
@@ -1085,19 +1190,53 @@ def principal_class_detail(request: Request, department: str, class_name: str):
         
     real_class_name = class_name.replace("_", " ")
     
-    # 1. Load HOD submission metadata
+    # 1. Load submission metadata from advisor submission or HOD approval or Principal approval
     advisor_folder = get_advisor_class_folder(department, real_class_name)
     submission_file = advisor_folder / "submission.json"
-    if not submission_file.exists():
-        raise HTTPException(status_code=404, detail="This class has not been submitted by the advisor yet.")
-        
-    with open(submission_file, "r") as f:
-        submission = json.load(f)
+    
+    submission = {}
+    if submission_file.exists():
+        with open(submission_file, "r", encoding="utf-8") as f:
+            submission = json.load(f)
+    else:
+        from services.advisor.hod_dashboard_service import get_approval_file
+        app_file = get_approval_file(department, real_class_name)
+        if app_file.exists():
+            with open(app_file, "r", encoding="utf-8") as f:
+                app_data = json.load(f)
+            wf_type = app_data.get("workflow_type", "Office Direct Upload")
+            adv_name = "Office" if wf_type == "Office Direct Upload" else "Advisor"
+            submission = {
+                "advisor": adv_name,
+                "department": department,
+                "class": real_class_name,
+                "submitted_time": app_data.get("last_updated", ""),
+                "student_count": len(app_data.get("students", [])),
+                "status": app_data.get("status", "Submitted to Principal"),
+                "workflow_type": wf_type
+            }
+        else:
+            p_meta = get_principal_metadata_file(department, real_class_name)
+            if p_meta.exists():
+                with open(p_meta, "r", encoding="utf-8") as f:
+                    p_data = json.load(f)
+                submission = {
+                    "advisor": "Office" if p_data.get("workflow_type") == "Office Direct Upload" else "Advisor",
+                    "department": department,
+                    "class": real_class_name,
+                    "submitted_time": p_data.get("approval_time", ""),
+                    "student_count": p_data.get("certificate_count", 0),
+                    "status": p_data.get("status", "Approved"),
+                    "workflow_type": p_data.get("workflow_type", "Office Direct Upload")
+                }
+            else:
+                raise HTTPException(status_code=404, detail="No submission or approval record found for this class.")
         
     # 2. Load Principal approval state
     p_state = load_principal_state(department, real_class_name)
     students = p_state.get("students", [])
     students.sort(key=lambda s: (STATUS_PRIORITY.get(s.get("status", ""), 99), s.get("register_number", "")))
+
     
     # Calculate stats for the class
     total = len(students)
@@ -1304,10 +1443,284 @@ def principal_preview_html_in_browser(department: str, class_name: str, register
         preview_photo_prefix
     )
 
+    html_content = inject_preview_styles(html_content)
+
     return HTMLResponse(
         content=html_content,
         media_type="text/html; charset=utf-8"
     )
+
+
+# ================= OFFICE PORTAL =================
+
+def get_logged_in_office(request: Request):
+    """Dependency to retrieve logged in office user from session."""
+    office = request.session.get("office")
+    if not office:
+        raise HTTPException(status_code=307, detail="Not logged in")
+    return office
+
+@app.get("/office/login", response_class=HTMLResponse)
+def office_login_page(request: Request):
+    if request.session.get("office"):
+        return RedirectResponse(url="/office")
+    return templates.TemplateResponse(request=request, name="office_login.html", context={"error": None})
+
+@app.post("/office/login")
+def office_login(
+    request: Request, 
+    username: str = Form(...), 
+    password: str = Form(...),
+    db: Session = Depends(get_db)
+):
+    office_match = db.query(DBUser).filter(
+        DBUser.username == username,
+        DBUser.password == password,
+        DBUser.role == "office"
+    ).first()
+            
+    if office_match:
+        request.session["office"] = {
+            "username": office_match.username,
+            "name": office_match.name
+        }
+        return RedirectResponse(url="/office", status_code=303)
+    else:
+        return templates.TemplateResponse(request=request, name="office_login.html", context={"error": "Invalid username or password."})
+
+@app.get("/office/logout")
+def office_logout(request: Request):
+    request.session.clear()
+    return RedirectResponse(url="/", status_code=303)
+
+
+@app.get("/office")
+def office_dashboard(request: Request):
+    office = request.session.get("office")
+    if not office:
+        return RedirectResponse(url="/office/login")
+        
+    batches = get_all_batches()
+    stats = get_office_stats()
+    rejected_students = get_all_rejected_students()
+    
+    upload_errors = request.session.pop("office_upload_errors", None)
+    upload_success = request.session.pop("office_upload_success", None)
+    notify_success = request.session.pop("office_notify_success", None)
+    
+    return templates.TemplateResponse(
+        request=request,
+        name="office_dashboard.html",
+        context={
+            "request": request,
+            "office": office,
+            "batches": batches,
+            "stats": stats,
+            "rejected_students": rejected_students,
+            "upload_errors": upload_errors,
+            "upload_success": upload_success,
+            "notify_success": notify_success
+        }
+    )
+
+@app.post("/office/upload")
+def office_upload_csv(
+    request: Request,
+    department: str = Form(...),
+    class_name: str = Form(...),
+    students_csv: UploadFile = File(...),
+    photos_zip: UploadFile = File(None)
+):
+    office = request.session.get("office")
+    if not office:
+        return RedirectResponse(url="/office/login", status_code=303)
+        
+    dept = department.strip().upper()
+    c_name = class_name.strip()
+    
+    class_dir = get_class_folder(dept, c_name)
+    (class_dir / "csv").mkdir(parents=True, exist_ok=True)
+    (class_dir / "html").mkdir(parents=True, exist_ok=True)
+    (class_dir / "pdf").mkdir(parents=True, exist_ok=True)
+    (class_dir / "preview").mkdir(parents=True, exist_ok=True)
+    
+    csv_path = class_dir / "csv" / "students.csv"
+    with open(csv_path, "wb") as buffer:
+        shutil.copyfileobj(students_csv.file, buffer)
+        
+    errors = validate_csv_data(csv_path)
+    if errors:
+        if csv_path.exists():
+            csv_path.unlink()
+        request.session["office_upload_errors"] = errors
+        return RedirectResponse(url="/office", status_code=303)
+        
+    if photos_zip and photos_zip.filename:
+        temp_zip = class_dir / "temp_photos.zip"
+        with open(temp_zip, "wb") as buffer:
+            shutil.copyfileobj(photos_zip.file, buffer)
+        try:
+            with zipfile.ZipFile(temp_zip, "r") as zip_ref:
+                zip_ref.extractall(class_dir / "preview")
+            static_images_dir = Path("static/images")
+            static_images_dir.mkdir(parents=True, exist_ok=True)
+            dept_images_dir = Path("generated/advisor") / dept / "static" / "images"
+            dept_images_dir.mkdir(parents=True, exist_ok=True)
+            for f in (class_dir / "preview").iterdir():
+                if f.is_file() and f.suffix.lower() in [".jpg", ".jpeg", ".png"]:
+                    shutil.copy(f, static_images_dir / f.name)
+                    shutil.copy(f, dept_images_dir / f.name)
+        except Exception as e:
+            request.session["office_upload_errors"] = [f"Failed to extract photo zip: {str(e)}"]
+            return RedirectResponse(url="/office", status_code=303)
+        finally:
+            if temp_zip.exists():
+                temp_zip.unlink()
+                
+    dept_static = Path("generated/advisor") / dept / "static"
+    shutil.copytree("static", dept_static, dirs_exist_ok=True)
+    shutil.copy("static/images/principal_placeholder.jpg", dept_static / "images" / "principal.jpg")
+    
+    students = load_students_from_csv(dept, c_name)
+    for s in students:
+        reg_no = s.get("register_number", "")
+        photo_filename = s.get("student_photo", "")
+        preview_photo = class_dir / "preview" / photo_filename
+        reg_photo = class_dir / "preview" / f"{reg_no}.jpg"
+        if preview_photo.exists() and photo_filename:
+            s["student_photo"] = photo_filename
+        elif reg_photo.exists():
+            s["student_photo"] = f"{reg_no}.jpg"
+        else:
+            s["student_photo"] = "principal.jpg"
+            
+    temp_csv_backup = Path("data/students_backup.csv")
+    main_csv = Path("data/students.csv")
+    if main_csv.exists():
+        shutil.copy(main_csv, temp_csv_backup)
+    try:
+        shutil.copy(csv_path, main_csv)
+        generate_certificates(students, str(class_dir / "html"), str(class_dir / "pdf"))
+    finally:
+        if temp_csv_backup.exists():
+            shutil.copy(temp_csv_backup, main_csv)
+            temp_csv_backup.unlink()
+            
+    # Automatically submit Office Direct Upload to Principal (Workflow B)
+    submit_office_batch_to_principal(dept, c_name, office["username"])
+    
+    write_audit_log(office["username"], "Office Upload CSV & Photos (Direct to Principal)", None, dept, c_name)
+    request.session["office_upload_success"] = f"Batch '{c_name}' ({dept}) submitted to Principal — Waiting for Principal approval"
+    return RedirectResponse(url="/office", status_code=303)
+
+
+@app.post("/office/submit-to-principal")
+def office_submit_to_principal(
+    request: Request,
+    department: str = Form(...),
+    class_name: str = Form(...)
+):
+    office = request.session.get("office")
+    if not office:
+        return RedirectResponse(url="/office/login", status_code=303)
+        
+    submit_office_batch_to_principal(department, class_name, office["username"])
+    write_audit_log(office["username"], "Office Submit Batch Direct to Principal", None, department, class_name)
+    return RedirectResponse(url="/office", status_code=303)
+
+@app.get("/office/class/{department}/{class_name}")
+def office_class_detail(request: Request, department: str, class_name: str):
+    office = request.session.get("office")
+    if not office:
+        return RedirectResponse(url="/office/login")
+        
+    real_class_name = class_name.replace("_", " ")
+    advisor_folder = get_class_folder(department, real_class_name)
+    
+    submission_file = advisor_folder / "submission.json"
+    submission = None
+    if submission_file.exists():
+        with open(submission_file, "r") as f:
+            submission = json.load(f)
+            
+    students = load_students_status(department, real_class_name)
+    
+    total = len(students)
+    approved = sum(1 for s in students if s.get("status") == "Approved")
+    rejected = sum(1 for s in students if s.get("status") == "Rejected")
+    
+    class_stats = {
+        "total": total,
+        "approved": approved,
+        "rejected": rejected
+    }
+    
+    return templates.TemplateResponse(
+        request=request,
+        name="office_class_detail.html",
+        context={
+            "request": request,
+            "office": office,
+            "department": department,
+            "class_name": real_class_name,
+            "submission": submission,
+            "students": students,
+            "class_stats": class_stats
+        }
+    )
+
+@app.get("/office/download-final-zip/{department}/{class_name}")
+def office_download_final_zip(request: Request, department: str, class_name: str):
+    office = request.session.get("office")
+    if not office:
+        return RedirectResponse(url="/office/login")
+        
+    real_class_name = class_name.replace("_", " ")
+    zip_path = generate_final_zip(department, real_class_name)
+    
+    if not zip_path.exists():
+        class_dir = get_class_folder(department, real_class_name)
+        zip_path = class_dir / f"{real_class_name.replace(' ', '_')}.zip"
+        if not zip_path.exists():
+            generate_class_zip(department, real_class_name)
+            
+    if not zip_path.exists():
+        raise HTTPException(status_code=404, detail="ZIP file not found.")
+        
+    download_filename = get_class_zip_filename(real_class_name, "final")
+    write_audit_log(office["username"], "Office Download Final ZIP", None, department, real_class_name)
+    
+    return FileResponse(
+        path=zip_path,
+        media_type="application/x-zip-compressed",
+        filename=download_filename
+    )
+
+@app.post("/office/notify-advisor")
+def office_notify_advisor(
+    request: Request,
+    student_name: str = Form(...),
+    identifier: str = Form(...),
+    department: str = Form(...),
+    class_name: str = Form(...),
+    rejection_reason: str = Form(...)
+):
+    office = request.session.get("office")
+    if not office:
+        return RedirectResponse(url="/office/login", status_code=303)
+        
+    send_rejection_notification(
+        office_user=office["username"],
+        student_name=student_name,
+        identifier=identifier,
+        department=department,
+        class_name=class_name,
+        rejection_reason=rejection_reason
+    )
+    
+    write_audit_log(office["username"], f"Office Notify Advisor for {student_name}", identifier, department, class_name)
+    request.session["office_notify_success"] = True
+    return RedirectResponse(url="/office", status_code=303)
 
 if __name__ == "__main__":
     import uvicorn

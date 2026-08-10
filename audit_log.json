@@ -1,0 +1,34 @@
+[
+    {
+        "timestamp": "2026-08-10 21:28:02",
+        "user": "office",
+        "action": "Office Upload CSV & Photos (Direct to Principal)",
+        "student": "",
+        "department": "CSE",
+        "class": "IV BE CSE A"
+    },
+    {
+        "timestamp": "2026-08-10 21:28:49",
+        "user": "principal",
+        "action": "Principal Approve Entire Class",
+        "student": "",
+        "department": "CSE",
+        "class": "IV BE CSE A"
+    },
+    {
+        "timestamp": "2026-08-10 21:28:53",
+        "user": "principal",
+        "action": "Download Final ZIP",
+        "student": "",
+        "department": "CSE",
+        "class": "IV BE CSE A"
+    },
+    {
+        "timestamp": "2026-08-10 21:30:37",
+        "user": "office",
+        "action": "Office Download Final ZIP",
+        "student": "",
+        "department": "CSE",
+        "class": "IV BE CSE A"
+    }
+]

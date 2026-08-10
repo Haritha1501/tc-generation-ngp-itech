@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Office Dashboard - TC Generator</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- FontAwesome for icons -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --office-primary: #059669;
+            --office-dark: #047857;
+            --office-light: #d1fae5;
+            --bg-body: #f8fafc;
+        }
+
+        body {
+            background-color: var(--bg-body);
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            min-height: 100vh;
+            color: #334155;
+        }
+
+        .navbar-office {
+            background: linear-gradient(135deg, var(--office-dark) 0%, var(--office-primary) 100%);
+            box-shadow: 0 4px 20px rgba(5, 150, 105, 0.15);
+        }
+
+        .stat-card {
+            border: none;
+            border-radius: 14px;
+            background: #ffffff;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.03);
+            transition: transform 0.2s ease;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-3px);
+        }
+
+        .stat-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.3rem;
+        }
+
+        .card-custom {
+            border: none;
+            border-radius: 16px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.04);
+            background: #ffffff;
+        }
+
+        .table-custom th {
+            background-color: #f1f5f9;
+            color: #475569;
+            font-weight: 600;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            border: none;
+        }
+
+        .badge-status {
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-weight: 600;
+            font-size: 0.75rem;
+        }
+
+        .badge-approved { background-color: #dcfce7; color: #166534; }
+        .badge-rejected { background-color: #fee2e2; color: #991b1b; }
+        .badge-pending { background-color: #fef3c7; color: #92400e; }
+        .badge-generated { background-color: #e0f2fe; color: #075985; }
+
+        .btn-office {
+            background-color: var(--office-primary);
+            color: #ffffff;
+            font-weight: 600;
+            border: none;
+            border-radius: 8px;
+        }
+
+        .btn-office:hover {
+            background-color: var(--office-dark);
+            color: #ffffff;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Top Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-dark navbar-office py-3">
+        <div class="container">
+            <a class="navbar-brand d-flex align-items-center fw-bold fs-5" href="/office">
+                <i class="fa-solid fa-building-user me-2 fs-4"></i> Central Office Portal
+            </a>
+            <div class="d-flex align-items-center gap-3">
+                <span class="text-white opacity-90 fs-7">
+                    <i class="fa-solid fa-user-circle me-1"></i> {{ office.name }}
+                </span>
+                <a href="/office/logout" class="btn btn-outline-light btn-sm rounded-pill px-3">
+                    <i class="fa-solid fa-right-from-bracket me-1"></i> Logout
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Container -->
+    <main class="container my-4">
+
+        <!-- Flash Notifications -->
+        {% if upload_errors %}
+        <div class="alert alert-danger alert-dismissible fade show rounded-3 shadow-sm mb-4" role="alert">
+            <h6 class="fw-bold mb-2"><i class="fa-solid fa-circle-exclamation me-2"></i>Upload Validation Errors:</h6>
+            <ul class="mb-0 ps-3">
+                {% for err in upload_errors %}
+                <li>{{ err }}</li>
+                {% endfor %}
+            </ul>
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+        {% endif %}
+
+        {% if upload_success %}
+        <div class="alert alert-success alert-dismissible fade show rounded-3 shadow-sm mb-4" role="alert">
+            <i class="fa-solid fa-circle-check me-2"></i> {{ upload_success if upload_success != True else 'Student CSV & Photos uploaded successfully by Office!' }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+        {% endif %}
+
+        {% if notify_success %}
+        <div class="alert alert-success alert-dismissible fade show rounded-3 shadow-sm mb-4" role="alert">
+            <i class="fa-solid fa-paper-plane me-2"></i> Rejection notification successfully sent to the respective Advisor!
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+        {% endif %}
+
+        <!-- Stat Cards Overview -->
+        <div class="row g-3 mb-4">
+            <div class="col-md-3">
+                <div class="stat-card p-3 d-flex align-items-center">
+                    <div class="stat-icon bg-emerald-light text-emerald me-3" style="background: #e0f2fe; color: #0284c7;">
+                        <i class="fa-solid fa-layer-group"></i>
+                    </div>
+                    <div>
+                        <div class="text-muted fs-7 font-semibold">Total Batches</div>
+                        <div class="fs-4 fw-bold text-dark">{{ stats.total_batches }}</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-3">
+                <div class="stat-card p-3 d-flex align-items-center">
+                    <div class="stat-icon me-3" style="background: #dcfce7; color: #16a34a;">
+                        <i class="fa-solid fa-certificate"></i>
+                    </div>
+                    <div>
+                        <div class="text-muted fs-7 font-semibold">Approved Batches</div>
+                        <div class="fs-4 fw-bold text-dark">{{ stats.approved_batches }}</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-3">
+                <div class="stat-card p-3 d-flex align-items-center">
+                    <div class="stat-icon me-3" style="background: #fef3c7; color: #d97706;">
+                        <i class="fa-solid fa-clock-rotate-left"></i>
+                    </div>
+                    <div>
+                        <div class="text-muted fs-7 font-semibold">Pending Verification</div>
+                        <div class="fs-4 fw-bold text-dark">{{ stats.pending_principal }}</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-3">
+                <div class="stat-card p-3 d-flex align-items-center">
+                    <div class="stat-icon me-3" style="background: #fee2e2; color: #dc2626;">
+                        <i class="fa-solid fa-user-xmark"></i>
+                    </div>
+                    <div>
+                        <div class="text-muted fs-7 font-semibold">Rejected Requests</div>
+                        <div class="fs-4 fw-bold text-dark">{{ stats.total_rejected }}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Workflow B: Office Direct Upload Form -->
+        <div class="card card-custom mb-5">
+            <div class="card-header bg-white py-3 border-0">
+                <div class="d-flex align-items-center">
+                    <i class="fa-solid fa-file-arrow-up text-emerald fa-lg me-2" style="color: var(--office-primary);"></i>
+                    <h5 class="fw-bold mb-0">Workflow B: Office Direct Upload (Special / Urgent Cases)</h5>
+                </div>
+                <p class="text-muted fs-7 mb-0 mt-1">Upload department-wise student CSV & photos and submit directly to the Principal.</p>
+            </div>
+            <div class="card-body">
+                <form action="/office/upload" method="post" enctype="multipart/form-data">
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            <label for="department" class="form-label font-semibold fs-7 text-secondary">Department</label>
+                            <select class="form-select" id="department" name="department" required>
+                                <option value="" disabled selected>Select Department</option>
+                                <option value="CSE">CSE - Computer Science & Eng.</option>
+                                <option value="IT">IT - Information Technology</option>
+                                <option value="ECE">ECE - Electronics & Comm. Eng.</option>
+                                <option value="EEE">EEE - Electrical & Electronics Eng.</option>
+                                <option value="AIDS">AIDS - AI & Data Science</option>
+                                <option value="MECH">MECH - Mechanical Engineering</option>
+                                <option value="CIVIL">CIVIL - Civil Engineering</option>
+                                <option value="BME">BME - Biomedical Engineering</option>
+                                <option value="CSBS">CSBS - Computer Science & Business</option>
+                                <option value="CS">CS - CSE (Cyber Security)</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label for="class_name" class="form-label font-semibold fs-7 text-secondary">Class / Batch Identifier</label>
+                            <input type="text" class="form-control" id="class_name" name="class_name" placeholder="e.g. 2024-2028-CSE-A" required>
+                        </div>
+                        <div class="col-md-4">
+                            <label for="students_csv" class="form-label font-semibold fs-7 text-secondary">Student Data CSV</label>
+                            <input type="file" class="form-control" id="students_csv" name="students_csv" accept=".csv" required>
+                        </div>
+                        <div class="col-md-8">
+                            <label for="photos_zip" class="form-label font-semibold fs-7 text-secondary">Student Photos ZIP (Optional)</label>
+                            <input type="file" class="form-control" id="photos_zip" name="photos_zip" accept=".zip">
+                        </div>
+                        <div class="col-md-4 d-flex align-items-end">
+                            <button type="submit" class="btn btn-office w-100 py-2">
+                                <i class="fa-solid fa-cloud-arrow-up me-2"></i> Upload & Process Batch
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Rejected TC Requests Section -->
+        <div class="card card-custom mb-5">
+            <div class="card-header bg-white py-3 border-0 d-flex justify-content-between align-items-center">
+                <div class="d-flex align-items-center">
+                    <i class="fa-solid fa-triangle-exclamation text-danger fa-lg me-2"></i>
+                    <h5 class="fw-bold mb-0">Rejected Student TC Requests</h5>
+                </div>
+                <span class="badge bg-danger rounded-pill px-3 py-2 fs-7">{{ rejected_students|length }} Rejections</span>
+            </div>
+            <div class="card-body p-0">
+                {% if rejected_students %}
+                <div class="table-responsive">
+                    <table class="table table-hover table-custom align-middle mb-0">
+                        <thead>
+                            <tr>
+                                <th class="ps-4">Student Details</th>
+                                <th>Department & Class</th>
+                                <th>Rejected By</th>
+                                <th>Rejection Reason</th>
+                                <th>Assigned Advisor</th>
+                                <th class="text-end pe-4">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for r in rejected_students %}
+                            <tr>
+                                <td class="ps-4">
+                                    <div class="fw-bold text-dark">{{ r.student_name }}</div>
+                                    <div class="text-muted fs-7">Reg No: {{ r.register_number }}</div>
+                                </td>
+                                <td>
+                                    <span class="badge bg-light text-dark fw-bold me-1">{{ r.department }}</span>
+                                    <span class="fs-7 text-secondary">{{ r.class_name }}</span>
+                                </td>
+                                <td>
+                                    {% if r.rejected_by == "HOD" %}
+                                    <span class="badge bg-warning text-dark"><i class="fa-solid fa-user-shield me-1"></i> HOD</span>
+                                    {% else %}
+                                    <span class="badge bg-danger"><i class="fa-solid fa-crown me-1"></i> Principal</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <span class="text-danger fw-semibold fs-7">{{ r.rejection_reason }}</span>
+                                </td>
+                                <td>
+                                    <div class="fs-7 text-dark fw-bold"><i class="fa-solid fa-user-tie text-secondary me-1"></i> {{ r.assigned_advisor }}</div>
+                                </td>
+                                <td class="text-end pe-4">
+                                    {% if r.assigned_advisor == "N/A (Office Direct)" or r.workflow_type == "Office Direct Upload" %}
+                                    <span class="badge bg-light text-secondary border">N/A (Office Direct)</span>
+                                    {% else %}
+                                    <form action="/office/notify-advisor" method="post" class="d-inline">
+                                        <input type="hidden" name="student_name" value="{{ r.student_name }}">
+                                        <input type="hidden" name="identifier" value="{{ r.register_number }}">
+                                        <input type="hidden" name="department" value="{{ r.department }}">
+                                        <input type="hidden" name="class_name" value="{{ r.class_name }}">
+                                        <input type="hidden" name="rejection_reason" value="{{ r.rejection_reason }}">
+                                        
+                                        {% if r.notification_sent %}
+                                        <button type="button" class="btn btn-sm btn-outline-secondary px-3" disabled>
+                                            <i class="fa-solid fa-check-double me-1 text-success"></i> Notified
+                                        </button>
+                                        {% else %}
+                                        <button type="submit" class="btn btn-sm btn-outline-danger px-3">
+                                            <i class="fa-solid fa-bell me-1"></i> Send Notification
+                                        </button>
+                                        {% endif %}
+                                    </form>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="p-4 text-center text-muted">
+                    <i class="fa-solid fa-circle-check text-success fa-2x mb-2 d-block"></i>
+                    No rejected student TC requests found.
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- All Department Batches & Approved TCs -->
+        <div class="card card-custom">
+            <div class="card-header bg-white py-3 border-0 d-flex justify-content-between align-items-center">
+                <div class="d-flex align-items-center">
+                    <i class="fa-solid fa-folder-open text-primary fa-lg me-2"></i>
+                    <h5 class="fw-bold mb-0">All Department Batches & Certificate Control</h5>
+                </div>
+                <span class="text-muted fs-7">Final control of all approved certificates</span>
+            </div>
+            <div class="card-body p-0">
+                {% if batches %}
+                <div class="table-responsive">
+                    <table class="table table-hover table-custom align-middle mb-0">
+                        <thead>
+                            <tr>
+                                <th class="ps-4">Department & Class</th>
+                                <th>Source / Advisor</th>
+                                <th>Students</th>
+                                <th>Workflow Type</th>
+                                <th>Status</th>
+                                <th class="text-end pe-4">Manage & Control</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for b in batches %}
+                            <tr>
+                                <td class="ps-4">
+                                    <div class="fw-bold text-dark fs-6">{{ b.class_name }}</div>
+                                    <span class="badge bg-light text-secondary border">{{ b.department }}</span>
+                                </td>
+                                <td>
+                                    <span class="fs-7 font-semibold text-dark"><i class="fa-solid fa-user me-1 text-secondary"></i> {{ b.advisor }}</span>
+                                </td>
+                                <td>
+                                    <span class="badge bg-secondary rounded-pill px-3">{{ b.total_students }}</span>
+                                </td>
+                                <td>
+                                    {% if b.workflow_type == "Office Direct Upload" %}
+                                    <span class="badge bg-emerald-light text-success border border-success px-2 py-1 fs-8">
+                                        <i class="fa-solid fa-bolt me-1"></i> Workflow B (Office Direct)
+                                    </span>
+                                    {% else %}
+                                    <span class="badge bg-light text-primary border border-primary px-2 py-1 fs-8">
+                                        <i class="fa-solid fa-diagram-project me-1"></i> Workflow A (Advisor)
+                                    </span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if b.status == "Approved" %}
+                                    <span class="badge badge-status badge-approved"><i class="fa-solid fa-circle-check me-1"></i> Principal Approved — Final TC Available</span>
+                                    {% elif b.status == "Rejected" %}
+                                    <span class="badge badge-status badge-rejected"><i class="fa-solid fa-circle-xmark me-1"></i> Rejected</span>
+                                    {% elif b.status in ["Submitted to Principal", "Direct Office Submission"] %}
+                                    <span class="badge badge-status badge-pending"><i class="fa-solid fa-paper-plane me-1"></i> Waiting for Principal Approval</span>
+                                    {% elif b.status in ["Approved by HOD", "Partially Approved"] %}
+                                    <span class="badge badge-status badge-pending"><i class="fa-solid fa-clock me-1"></i> Pending Principal</span>
+                                    {% elif b.status == "Submitted to HOD" %}
+                                    <span class="badge badge-status badge-pending"><i class="fa-solid fa-hourglass-start me-1"></i> Pending HOD</span>
+                                    {% else %}
+                                    <span class="badge badge-status badge-generated"><i class="fa-solid fa-gears me-1"></i> {{ b.status }}</span>
+                                    {% endif %}
+                                </td>
+                                <td class="text-end pe-4">
+                                    <div class="d-flex justify-content-end gap-2">
+                                        {% if b.workflow_type == "Office Direct Upload" and b.status == "Generated" %}
+                                        <form action="/office/submit-to-principal" method="post" class="d-inline">
+                                            <input type="hidden" name="department" value="{{ b.department }}">
+                                            <input type="hidden" name="class_name" value="{{ b.class_name }}">
+                                            <button type="submit" class="btn btn-sm btn-warning text-dark font-semibold">
+                                                <i class="fa-solid fa-paper-plane me-1"></i> Send to Principal
+                                            </button>
+                                        </form>
+                                        {% endif %}
+
+                                        {% if b.status == "Approved" %}
+                                        <a href="/office/download-final-zip/{{ b.department }}/{{ b.class_name|replace(' ', '_') }}" class="btn btn-sm btn-success fw-bold px-3">
+                                            <i class="fa-solid fa-file-zipper me-1"></i> Download Final TCs
+                                        </a>
+                                        {% endif %}
+
+                                        <a href="/office/class/{{ b.department }}/{{ b.class_name|replace(' ', '_') }}" class="btn btn-sm btn-outline-secondary px-3">
+                                            <i class="fa-solid fa-eye me-1"></i> View Details
+                                        </a>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="p-4 text-center text-muted">
+                    No department batches loaded yet.
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Bootstrap Bundle JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+
+</html>
