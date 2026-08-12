@@ -33,111 +33,95 @@ def init_db():
 def seed_users():
     db = SessionLocal()
     try:
-        # Ensure Office user exists even if database was previously seeded
-        office_user = db.query(DBUser).filter(DBUser.role == "office").first()
-        if not office_user:
-            office_path = Path("data/office.json")
-            if office_path.exists():
-                with open(office_path, "r", encoding="utf-8") as f:
-                    data = json.load(f)
-                for off in data.get("office_users", []):
-                    db_user = DBUser(
-                        username=off["username"],
-                        password=off["password"],
-                        name=off["name"],
-                        role="office"
-                    )
-                    db.add(db_user)
+        print("Syncing users from JSON configuration files...")
+
+        def upsert_user(username, password, name, role, department=None, class_name=None):
+            user = db.query(DBUser).filter(DBUser.username == username).first()
+            if user:
+                user.password = password
+                user.name = name
+                user.role = role
+                user.department = department
+                user.class_name = class_name
             else:
-                db_user = DBUser(
-                    username="office",
-                    password="password123",
-                    name="Central Office Administrator",
-                    role="office"
+                user = DBUser(
+                    username=username,
+                    password=password,
+                    name=name,
+                    role=role,
+                    department=department,
+                    class_name=class_name
                 )
-                db.add(db_user)
-            db.commit()
+                db.add(user)
 
-        # Check if users table is empty
-        if db.query(DBUser).first() is not None:
-            return
-            
-        print("Seeding users from JSON files...")
-
-        
-        # Seed Advisors
+        # 1. Seed/Sync Advisors from data/advisors.json
         advisors_path = Path("data/advisors.json")
         if advisors_path.exists():
             with open(advisors_path, "r", encoding="utf-8") as f:
                 data = json.load(f)
             for adv in data.get("advisors", []):
-                db_user = DBUser(
+                upsert_user(
                     username=adv["username"],
                     password=adv["password"],
                     name=adv["name"],
                     role="advisor",
-                    department=adv["department"],
-                    class_name=adv["class"]
+                    department=adv.get("department"),
+                    class_name=adv.get("class")
                 )
-                db.add(db_user)
-                
-        # Seed HODs
+
+        # 2. Seed/Sync HODs from data/hods.json
         hods_path = Path("data/hods.json")
         if hods_path.exists():
             with open(hods_path, "r", encoding="utf-8") as f:
                 data = json.load(f)
             for hod in data.get("hods", []):
-                db_user = DBUser(
+                upsert_user(
                     username=hod["username"],
                     password=hod["password"],
                     name=hod["name"],
                     role="hod",
-                    department=hod["department"]
+                    department=hod.get("department")
                 )
-                db.add(db_user)
-                
-        # Seed Principals
+
+        # 3. Seed/Sync Principals from data/principal.json
         principal_path = Path("data/principal.json")
         if principal_path.exists():
             with open(principal_path, "r", encoding="utf-8") as f:
                 data = json.load(f)
             for p in data.get("principals", []):
-                db_user = DBUser(
+                upsert_user(
                     username=p["username"],
                     password=p["password"],
                     name=p["name"],
                     role="principal"
                 )
-                db.add(db_user)
-                
-        # Seed Office Users
+
+        # 4. Seed/Sync Office Users from data/office.json (or default fallback)
         office_path = Path("data/office.json")
         if office_path.exists():
             with open(office_path, "r", encoding="utf-8") as f:
                 data = json.load(f)
             for off in data.get("office_users", []):
-                db_user = DBUser(
+                upsert_user(
                     username=off["username"],
                     password=off["password"],
                     name=off["name"],
                     role="office"
                 )
-                db.add(db_user)
         else:
-            # Fallback default office user if office.json is missing
-            db_user = DBUser(
+            upsert_user(
                 username="office",
                 password="password123",
                 name="Central Office Administrator",
                 role="office"
             )
-            db.add(db_user)
 
         db.commit()
-        print("Seeding complete.")
+        print("User database sync complete.")
     except Exception as e:
         print(f"Error seeding database: {e}")
         db.rollback()
     finally:
         db.close()
+
 
