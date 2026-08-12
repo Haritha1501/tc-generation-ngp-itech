@@ -24,7 +24,8 @@ def generate_preview():
 def generate_certificates(
     students,
     html_folder,
-    pdf_folder
+    pdf_folder,
+    is_principal_approved: bool = False
 ):
     if students is None:
         students = get_students("data/students.csv")
@@ -32,7 +33,14 @@ def generate_certificates(
     for student in students:
 
         student["student_photo"] = "/static/images/" + student["student_photo"]
-        student["principal_signature"] = "/static/images/principal.jpeg"
+        if is_principal_approved:
+            student["principal_signature"] = "/static/images/principal.jpeg"
+            student["college_seal"] = "/static/images/seal.jpeg"
+            student["is_approved"] = True
+        else:
+            student["principal_signature"] = "/static/images/pending_signature.jpg"
+            student["college_seal"] = "/static/images/pending_seal.jpg"
+            student["is_approved"] = False
 
         html_file = save_html(
                 student,
@@ -46,4 +54,4 @@ def generate_certificates(
         generate_pdf(
             html_file,
             str(pdf_file)
-        )
+        )

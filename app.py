@@ -591,6 +591,84 @@ def get_authorized_user(request: Request):
             return user
     return None
 
+def find_student_class_by_reg(register_number: str):
+    """
+    Searches generated and approval directories to discover department and class_name
+    for a given student register number if not provided in the request or session.
+    """
+    reg_clean = str(register_number).strip()
+    
+    # 1. Search generated/final
+    final_base = Path("generated/final")
+    if final_base.exists():
+        for dept_dir in final_base.iterdir():
+            if dept_dir.is_dir():
+                for c_dir in dept_dir.iterdir():
+                    if c_dir.is_dir():
+                        if (c_dir / "html" / f"{reg_clean}.html").exists() or (c_dir / "pdf" / f"{reg_clean}.pdf").exists():
+                            return dept_dir.name, c_dir.name.replace("_", " ")
+
+    # 2. Search generated/advisor
+    adv_base = Path("generated/advisor")
+    if adv_base.exists():
+        for dept_dir in adv_base.iterdir():
+            if dept_dir.is_dir():
+                for c_dir in dept_dir.iterdir():
+                    if c_dir.is_dir():
+                        if (c_dir / "html" / f"{reg_clean}.html").exists() or (c_dir / "pdf" / f"{reg_clean}.pdf").exists():
+                            return dept_dir.name, c_dir.name.replace("_", " ")
+
+    # 3. Search approvals/hod
+    hod_base = Path("approvals/hod")
+    if hod_base.exists():
+        for dept_dir in hod_base.iterdir():
+            if dept_dir.is_dir():
+                for c_dir in dept_dir.iterdir():
+                    if c_dir.is_dir() and (c_dir / "approval.json").exists():
+                        try:
+                            with open(c_dir / "approval.json", "r", encoding="utf-8") as f:
+                                app_data = json.load(f)
+                            if any(str(s.get("register_number")).strip() == reg_clean for s in app_data.get("students", [])):
+                                return dept_dir.name, c_dir.name.replace("_", " ")
+                        except Exception:
+                            pass
+
+    return None, None
+
+def is_batch_principal_approved(department: str, class_name: str) -> bool:
+    """
+    Returns True ONLY if the class/batch has been approved by the Principal
+    as recorded in principal_approval.json.
+    """
+    real_class_name = class_name.replace("_", " ")
+    p_meta_file = get_principal_metadata_file(department, real_class_name)
+    if p_meta_file.exists():
+        try:
+            with open(p_meta_file, "r", encoding="utf-8") as f:
+                data = json.load(f)
+            return data.get("status") == "Approved"
+        except Exception:
+            pass
+    return False
+
+def sanitize_html_approval_state(html_content: str, is_approved: bool) -> str:
+    """
+    Sanitizes HTML content to guarantee approval state rules:
+    - If NOT approved: replaces real signature/seal image references with pending placeholders.
+    - If approved: replaces pending placeholders with real signature/seal image references.
+    """
+    import re
+    if not is_approved:
+        html_content = html_content.replace("principal.jpeg", "pending_signature.jpg")
+        html_content = html_content.replace("principal.jpg", "pending_signature.jpg")
+        html_content = html_content.replace("seal.jpeg", "pending_seal.jpg")
+        html_content = html_content.replace("seal.jpg", "pending_seal.jpg")
+        html_content = re.sub(r'<img\s+src="[^"]*principal_design\.(jpeg|jpg)"[^>]*>', '', html_content)
+    else:
+        html_content = html_content.replace("pending_signature.jpg", "principal.jpeg")
+        html_content = html_content.replace("pending_seal.jpg", "seal.jpeg")
+    return html_content
+
 @app.get("/tc/download-pdf/{department}/{class_name}/{register_number}")
 @app.get("/advisor/download-pdf/{register_number}")
 def download_pdf(
@@ -611,18 +689,32 @@ def download_pdf(
         class_name = user["class_name"]
         
     if not department or not class_name:
+        auto_dept, auto_class = find_student_class_by_reg(register_number)
+        if auto_dept and auto_class:
+            department = auto_dept
+            class_name = auto_class
+
+    if not department or not class_name:
         raise HTTPException(status_code=400, detail="Department and Class Name are required.")
         
     real_class_name = class_name.replace("_", " ")
+    approved = is_batch_principal_approved(department, real_class_name)
     
-    final_pdf = get_final_class_folder(department, real_class_name) / "pdf" / f"{register_number}.pdf"
-    advisor_pdf = get_class_folder(department, real_class_name) / "pdf" / f"{register_number}.pdf"
-    
-    if final_pdf.exists():
-        pdf_path = final_pdf
-    elif advisor_pdf.exists():
-        pdf_path = advisor_pdf
+    if approved:
+        final_pdf = get_final_class_folder(department, real_class_name) / "pdf" / f"{register_number}.pdf"
+        if final_pdf.exists():
+            pdf_path = final_pdf
+        else:
+            from services.advisor.principal_dashboard_service import load_principal_state, regenerate_final_certificates
+            p_state = load_principal_state(department, real_class_name)
+            approved_regs = [s["register_number"] for s in p_state.get("students", []) if s["status"] == "Approved"]
+            regenerate_final_certificates(department, real_class_name, approved_regs)
+            pdf_path = final_pdf
     else:
+        advisor_pdf = get_class_folder(department, real_class_name) / "pdf" / f"{register_number}.pdf"
+        pdf_path = advisor_pdf
+        
+    if not pdf_path.exists():
         raise HTTPException(status_code=404, detail="PDF not found. Please generate certificates first.")
         
     return FileResponse(
@@ -651,18 +743,25 @@ def download_html(
         class_name = user["class_name"]
         
     if not department or not class_name:
+        auto_dept, auto_class = find_student_class_by_reg(register_number)
+        if auto_dept and auto_class:
+            department = auto_dept
+            class_name = auto_class
+
+    if not department or not class_name:
         raise HTTPException(status_code=400, detail="Department and Class Name are required.")
+
         
     real_class_name = class_name.replace("_", " ")
+    approved = is_batch_principal_approved(department, real_class_name)
     
-    final_html = get_final_class_folder(department, real_class_name) / "html" / f"{register_number}.html"
-    advisor_html = get_class_folder(department, real_class_name) / "html" / f"{register_number}.html"
-    
-    if final_html.exists():
-        html_path = final_html
-    elif advisor_html.exists():
-        html_path = advisor_html
+    if approved:
+        final_html = get_final_class_folder(department, real_class_name) / "html" / f"{register_number}.html"
+        html_path = final_html if final_html.exists() else get_class_folder(department, real_class_name) / "html" / f"{register_number}.html"
     else:
+        html_path = get_class_folder(department, real_class_name) / "html" / f"{register_number}.html"
+    
+    if not html_path.exists():
         raise HTTPException(status_code=404, detail="HTML not found. Please generate certificates first.")
         
     with open(html_path, "r", encoding="utf-8") as f:
@@ -685,7 +784,7 @@ def download_html(
             return f"data:{mime};base64,{b64_data}"
         return ""
         
-    for img_name, mime in [("watermark", "image/png"), ("logo", "image/png"), ("seal", "image/jpeg"), ("principal", "image/jpeg"), ("principal_design", "image/jpeg")]:
+    for img_name, mime in [("watermark", "image/png"), ("logo", "image/png"), ("pending_seal", "image/jpeg"), ("pending_signature", "image/jpeg"), ("seal", "image/jpeg"), ("principal", "image/jpeg"), ("principal_design", "image/jpeg")]:
         img_b64 = ""
         for ext in ['.jpeg', '.jpg', '.png']:
             p = app_base_dir / "static" / "images" / f"{img_name}{ext}"
@@ -722,6 +821,7 @@ def download_html(
             if photo_b64:
                 html_content = html_content.replace(photo_src, photo_b64)
                 
+    html_content = sanitize_html_approval_state(html_content, approved)
     return Response(
         content=html_content,
         media_type="text/html",
@@ -763,6 +863,7 @@ def preview_html_in_browser(department: str, class_name: str, register_number: s
         return HTMLResponse(content="<h3>Unauthorized</h3>", status_code=401)
         
     real_class_name = class_name.replace("_", " ")
+    approved = is_batch_principal_approved(department, real_class_name)
     
     final_dir = get_final_class_folder(department, real_class_name)
     final_html = final_dir / "html" / f"{register_number}.html"
@@ -770,7 +871,7 @@ def preview_html_in_browser(department: str, class_name: str, register_number: s
     class_dir = get_class_folder(department, real_class_name)
     advisor_html = class_dir / "html" / f"{register_number}.html"
     
-    if final_html.exists():
+    if approved and final_html.exists():
         html_path = final_html
         preview_photo_prefix = f"/generated/final/{department}/{class_name}/preview/"
     elif advisor_html.exists():
@@ -786,8 +887,10 @@ def preview_html_in_browser(department: str, class_name: str, register_number: s
     html_content = html_content.replace("../static/", "/static/")
     html_content = html_content.replace("../preview/", preview_photo_prefix)
     
+    html_content = sanitize_html_approval_state(html_content, approved)
     html_content = inject_preview_styles(html_content)
     return HTMLResponse(content=html_content)
+
 
 
 
@@ -1102,8 +1205,16 @@ def hod_preview_html_in_browser(department: str, class_name: str, register_numbe
         return HTMLResponse(content="<h3>Unauthorized</h3>", status_code=401)
         
     real_class_name = class_name.replace("_", " ")
-    class_dir = get_advisor_class_folder(department, real_class_name)
-    html_path = class_dir / "html" / f"{register_number}.html"
+    approved = is_batch_principal_approved(department, real_class_name)
+    
+    if approved:
+        final_dir = get_final_class_folder(department, real_class_name)
+        final_html = final_dir / "html" / f"{register_number}.html"
+        html_path = final_html if final_html.exists() else get_advisor_class_folder(department, real_class_name) / "html" / f"{register_number}.html"
+        class_path_uri = f"/generated/final/{department}/{class_name}/preview/"
+    else:
+        html_path = get_advisor_class_folder(department, real_class_name) / "html" / f"{register_number}.html"
+        class_path_uri = f"/generated/advisor/{department}/{class_name}/preview/"
     
     if not html_path.exists():
         return HTMLResponse(content="<h3>Certificate HTML not generated yet.</h3>", status_code=404)
@@ -1112,13 +1223,12 @@ def hod_preview_html_in_browser(department: str, class_name: str, register_numbe
         html_content = f.read()
         
     html_content = html_content.replace("../../static/", "/static/")
-    
-    # Preview photo URL
-    class_path_uri = f"/generated/advisor/{department}/{class_name}/preview/"
     html_content = html_content.replace("../preview/", class_path_uri)
     
+    html_content = sanitize_html_approval_state(html_content, approved)
     html_content = inject_preview_styles(html_content)
     return HTMLResponse(content=html_content)
+
 
 
 # ================= PRINCIPAL PORTAL =================
@@ -1443,12 +1553,15 @@ def principal_preview_html_in_browser(department: str, class_name: str, register
         preview_photo_prefix
     )
 
+    approved = is_batch_principal_approved(department, real_class_name)
+    html_content = sanitize_html_approval_state(html_content, approved)
     html_content = inject_preview_styles(html_content)
 
     return HTMLResponse(
         content=html_content,
         media_type="text/html; charset=utf-8"
     )
+
 
 
 # ================= OFFICE PORTAL =================

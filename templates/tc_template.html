@@ -249,7 +249,7 @@
 
     <div class="footer-center">
 
-        <img src="/static/images/seal.jpeg" class="seal">
+        <img src="{{ college_seal if college_seal else '/static/images/pending_seal.jpg' }}" class="seal" alt="College Seal">
 
         <span class="seal-text" style="font-style: italic; font-weight: bold;">College Seal</span>
 
@@ -259,10 +259,8 @@
 
     <div class="footer-right">
 
-        <!-- <img class="principal-sign"
-        src=""> -->
         <img class="principal-sign"
-            src="/static/images/principal.jpeg"
+            src="{{ principal_signature if principal_signature else '/static/images/pending_signature.jpg' }}"
             alt="Principal Signature">
        
         <div class="principal-title">
@@ -271,9 +269,9 @@
 
         </div>
 
-        <img src="/static/images/principal_design.jpeg" class="principal-designation-img" >
-
-
+        {% if is_approved %}
+        <img src="/static/images/principal_design.jpeg" class="principal-designation-img" alt="Principal Designation">
+        {% endif %}
 
     </div>
 

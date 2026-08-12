@@ -1,14 +1,38 @@
 [
     {
-        "timestamp": "2026-08-10 21:28:02",
-        "user": "office",
-        "action": "Office Upload CSV & Photos (Direct to Principal)",
+        "timestamp": "2026-08-12 21:53:00",
+        "user": "advisor_cse_a",
+        "action": "Upload CSV",
         "student": "",
         "department": "CSE",
         "class": "IV BE CSE A"
     },
     {
-        "timestamp": "2026-08-10 21:28:49",
+        "timestamp": "2026-08-12 21:53:04",
+        "user": "advisor_cse_a",
+        "action": "Generate Certificates",
+        "student": "",
+        "department": "CSE",
+        "class": "IV BE CSE A"
+    },
+    {
+        "timestamp": "2026-08-12 21:53:05",
+        "user": "advisor_cse_a",
+        "action": "Submit to HOD",
+        "student": "",
+        "department": "CSE",
+        "class": "IV BE CSE A"
+    },
+    {
+        "timestamp": "2026-08-12 21:53:05",
+        "user": "hod_CSE",
+        "action": "HOD Approve Entire Class",
+        "student": "",
+        "department": "CSE",
+        "class": "IV BE CSE A"
+    },
+    {
+        "timestamp": "2026-08-12 21:53:09",
         "user": "principal",
         "action": "Principal Approve Entire Class",
         "student": "",
@@ -16,17 +40,17 @@
         "class": "IV BE CSE A"
     },
     {
-        "timestamp": "2026-08-10 21:28:53",
-        "user": "principal",
-        "action": "Download Final ZIP",
+        "timestamp": "2026-08-12 21:54:38",
+        "user": "advisor_cse_a",
+        "action": "Upload CSV",
         "student": "",
         "department": "CSE",
         "class": "IV BE CSE A"
     },
     {
-        "timestamp": "2026-08-10 21:30:37",
-        "user": "office",
-        "action": "Office Download Final ZIP",
+        "timestamp": "2026-08-12 21:55:01",
+        "user": "advisor_cse_a",
+        "action": "Generate Certificates",
         "student": "",
         "department": "CSE",
         "class": "IV BE CSE A"

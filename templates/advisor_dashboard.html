@@ -433,12 +433,13 @@
                                                                 data-name="{{ student.student_name }}">
                                                             <i class="fa-solid fa-eye me-1"></i> Preview
                                                         </button>
-                                                        <a href="/advisor/download-pdf/{{ student.register_number }}" class="btn btn-outline-success btn-sm">
+                                                        <a href="/tc/download-pdf/{{ advisor.department }}/{{ advisor.class|replace(' ', '_') }}/{{ student.register_number }}" class="btn btn-outline-success btn-sm">
                                                             <i class="fa-solid fa-file-pdf me-1"></i> PDF
                                                         </a>
-                                                        <a href="/advisor/download-html/{{ student.register_number }}" class="btn btn-outline-info btn-sm">
+                                                        <a href="/tc/download-html/{{ advisor.department }}/{{ advisor.class|replace(' ', '_') }}/{{ student.register_number }}" class="btn btn-outline-info btn-sm">
                                                             <i class="fa-solid fa-code me-1"></i> HTML
                                                         </a>
+
                                                     {% endif %}
                                                 </div>
                                             </td>
@@ -499,12 +500,13 @@
                                                                 data-name="{{ student.student_name }}">
                                                             <i class="fa-solid fa-eye me-1"></i> Preview
                                                         </button>
-                                                        <a href="/advisor/download-pdf/{{ student.register_number }}" class="btn btn-outline-success btn-sm">
+                                                        <a href="/tc/download-pdf/{{ advisor.department }}/{{ advisor.class|replace(' ', '_') }}/{{ student.register_number }}" class="btn btn-outline-success btn-sm">
                                                             <i class="fa-solid fa-file-pdf me-1"></i> PDF
                                                         </a>
-                                                        <a href="/advisor/download-html/{{ student.register_number }}" class="btn btn-outline-info btn-sm">
+                                                        <a href="/tc/download-html/{{ advisor.department }}/{{ advisor.class|replace(' ', '_') }}/{{ student.register_number }}" class="btn btn-outline-info btn-sm">
                                                             <i class="fa-solid fa-code me-1"></i> HTML
                                                         </a>
+
                                                     {% endif %}
                                                 </div>
                                             </td>
@@ -554,12 +556,13 @@
                                                             data-name="{{ student.student_name }}">
                                                         <i class="fa-solid fa-eye me-1"></i> Preview
                                                     </button>
-                                                    <a href="/advisor/download-pdf/{{ student.register_number }}" class="btn btn-outline-success btn-sm">
+                                                    <a href="/tc/download-pdf/{{ advisor.department }}/{{ advisor.class|replace(' ', '_') }}/{{ student.register_number }}" class="btn btn-outline-success btn-sm">
                                                         <i class="fa-solid fa-file-pdf me-1"></i> PDF
                                                     </a>
-                                                    <a href="/advisor/download-html/{{ student.register_number }}" class="btn btn-outline-info btn-sm">
+                                                    <a href="/tc/download-html/{{ advisor.department }}/{{ advisor.class|replace(' ', '_') }}/{{ student.register_number }}" class="btn btn-outline-info btn-sm">
                                                         <i class="fa-solid fa-code me-1"></i> HTML
                                                     </a>
+
                                                 </div>
                                             </td>
                                         </tr>
