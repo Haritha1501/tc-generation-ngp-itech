@@ -10,31 +10,20 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Custom Sidebar Layout CSS -->
+    <link href="/static/css/sidebar.css" rel="stylesheet">
     <style>
         :root {
             --office-primary: #059669;
             --office-dark: #047857;
             --bg-body: #f8fafc;
         }
-
-        body {
-            background-color: var(--bg-body);
-            font-family: 'Plus Jakarta Sans', sans-serif;
-            color: #334155;
-        }
-
-        .navbar-office {
-            background: linear-gradient(135deg, var(--office-dark) 0%, var(--office-primary) 100%);
-            box-shadow: 0 4px 20px rgba(5, 150, 105, 0.15);
-        }
-
         .card-custom {
             border: none;
             border-radius: 16px;
             box-shadow: 0 4px 20px rgba(0,0,0,0.04);
             background: #ffffff;
         }
-
         .table-custom th {
             background-color: #f1f5f9;
             color: #475569;
@@ -44,11 +33,9 @@
             letter-spacing: 0.5px;
             border: none;
         }
-
         .badge-approved { background-color: #dcfce7; color: #166534; }
         .badge-rejected { background-color: #fee2e2; color: #991b1b; }
         .badge-pending { background-color: #fef3c7; color: #92400e; }
-
         .preview-iframe {
             width: 100%;
             height: 70vh;
@@ -58,149 +45,253 @@
 </head>
 <body>
 
-    <!-- Header Navbar -->
-    <nav class="navbar navbar-expand-lg navbar-dark navbar-office py-3">
-        <div class="container">
-            <a class="navbar-brand d-flex align-items-center fw-bold fs-5" href="/office">
-                <i class="fa-solid fa-building-user me-2 fs-4"></i> Central Office Portal
-            </a>
-            <div class="d-flex align-items-center gap-2">
-                <a href="/office" class="btn btn-outline-light btn-sm rounded-pill px-3">
-                    <i class="fa-solid fa-arrow-left me-1"></i> Back to Dashboard
+<div class="app-wrapper">
+    <!-- Left Sidebar -->
+    <aside class="app-sidebar" id="sidebar">
+        <div>
+            <!-- Branding Header -->
+            <div class="sidebar-header">
+                <a href="/office" class="sidebar-brand">
+                    <div class="sidebar-brand-icon">
+                        <i class="fa-solid fa-building-user"></i>
+                    </div>
+                    <div>
+                        <div class="sidebar-brand-title">Dr. NGPIT</div>
+                        <div class="sidebar-brand-subtitle">TC Generator System</div>
+                    </div>
                 </a>
             </div>
+
+            <!-- User Profile Box -->
+            <div class="sidebar-user-box">
+                <div class="user-avatar" style="background: linear-gradient(135deg, #059669 0%, #047857 100%);">
+                    <i class="fa-solid fa-user-shield"></i>
+                </div>
+                <div class="user-name">{{ office.name }}</div>
+                <div class="user-email">
+                    <i class="fa-regular fa-envelope"></i> {{ office.email or 'office@drngpit.ac.in' }}
+                </div>
+                <div class="user-email">
+                    <i class="fa-solid fa-folder-tree"></i> Viewing: <strong>{{ class_name }}</strong>
+                </div>
+                <div class="mt-2">
+                    <span class="user-badge">Central Office Workspace</span>
+                </div>
+            </div>
+
+            <!-- Navigation Links -->
+            <nav class="sidebar-nav">
+                <div class="nav-section-title">Navigation</div>
+                <a href="/office" class="nav-link">
+                    <i class="fa-solid fa-arrow-left"></i>
+                    <span>Back to Dashboard</span>
+                </a>
+                <a href="#" class="nav-link active">
+                    <i class="fa-solid fa-eye"></i>
+                    <span>Class Details</span>
+                </a>
+            </nav>
         </div>
-    </nav>
 
-    <!-- Main Container -->
-    <main class="container my-4">
+        <!-- Sidebar Footer Controls -->
+        <div class="sidebar-footer">
+            <button class="btn-change-pwd" data-bs-toggle="modal" data-bs-target="#changePasswordModal">
+                <i class="fa-solid fa-key me-1"></i> Change Password
+            </button>
+            <a href="/office/logout" class="btn-sidebar-logout">
+                <i class="fa-solid fa-right-from-bracket"></i>
+                <span>Log Out</span>
+            </a>
+        </div>
+    </aside>
 
-        <!-- Header Info Card -->
-        <div class="card card-custom mb-4">
-            <div class="card-body p-4">
-                <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
-                    <div>
-                        <div class="d-flex align-items-center gap-2">
-                            <span class="badge bg-emerald-light text-success border border-success px-3 py-1 fs-7 fw-bold">{{ department }}</span>
-                            <h3 class="fw-bold mb-0 text-dark">{{ class_name }}</h3>
+    <!-- Main Content Area -->
+    <div class="app-main">
+        <!-- Mobile Navbar Header -->
+        <div class="mobile-navbar" style="background: #047857;">
+            <div class="d-flex align-items-center gap-2">
+                <i class="fa-solid fa-building-user fs-4"></i>
+                <span class="fw-bold">Class Details - {{ class_name }}</span>
+            </div>
+            <button class="btn btn-outline-light btn-sm" onclick="document.getElementById('sidebar').classList.toggle('show')">
+                <i class="fa-solid fa-bars"></i>
+            </button>
+        </div>
+
+        <div class="main-content py-4 px-4">
+            <!-- Header Info Card -->
+            <div class="card card-custom mb-4">
+                <div class="card-body p-4">
+                    <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
+                        <div>
+                            <div class="d-flex align-items-center gap-2">
+                                <span class="badge bg-emerald-light text-success border border-success px-3 py-1 fs-7 fw-bold">{{ department }}</span>
+                                <h3 class="fw-bold mb-0 text-dark">{{ class_name }}</h3>
+                            </div>
+                            <p class="text-muted fs-7 mb-0 mt-2">
+                                <i class="fa-solid fa-user me-1 text-secondary"></i> Source: {{ submission.advisor if submission else 'Department Batch' }} | 
+                                <i class="fa-solid fa-clock me-1 text-secondary"></i> Submitted: {{ submission.submitted_time if submission else 'N/A' }}
+                            </p>
                         </div>
-                        <p class="text-muted fs-7 mb-0 mt-2">
-                            <i class="fa-solid fa-user me-1 text-secondary"></i> Source: {{ submission.advisor if submission else 'Department Batch' }} | 
-                            <i class="fa-solid fa-clock me-1 text-secondary"></i> Submitted: {{ submission.submitted_time if submission else 'N/A' }}
-                        </p>
+
+                        <div class="d-flex gap-3 text-center">
+                            <div class="bg-light p-3 rounded-3 border">
+                                <div class="text-muted fs-7 font-semibold">Total Students</div>
+                                <div class="fs-4 fw-bold text-dark">{{ class_stats.total }}</div>
+                            </div>
+                            <div class="bg-light p-3 rounded-3 border">
+                                <div class="text-muted fs-7 font-semibold">Approved</div>
+                                <div class="fs-4 fw-bold text-success">{{ class_stats.approved }}</div>
+                            </div>
+                            <div class="bg-light p-3 rounded-3 border">
+                                <div class="text-muted fs-7 font-semibold">Rejected</div>
+                                <div class="fs-4 fw-bold text-danger">{{ class_stats.rejected }}</div>
+                            </div>
+                        </div>
                     </div>
+                </div>
+            </div>
 
-                    <div class="d-flex gap-3 text-center">
-                        <div class="bg-light p-3 rounded-3 border">
-                            <div class="text-muted fs-7 font-semibold">Total Students</div>
-                            <div class="fs-4 fw-bold text-dark">{{ class_stats.total }}</div>
-                        </div>
-                        <div class="bg-light p-3 rounded-3 border">
-                            <div class="text-muted fs-7 font-semibold">Approved</div>
-                            <div class="fs-4 fw-bold text-success">{{ class_stats.approved }}</div>
-                        </div>
-                        <div class="bg-light p-3 rounded-3 border">
-                            <div class="text-muted fs-7 font-semibold">Rejected</div>
-                            <div class="fs-4 fw-bold text-danger">{{ class_stats.rejected }}</div>
-                        </div>
+            <!-- Flash Alerts -->
+            {% if request.session.get('pwd_error') %}
+            <div class="alert alert-danger alert-dismissible fade show shadow-sm mb-4" role="alert">
+                <i class="fa-solid fa-triangle-exclamation me-2"></i> {{ request.session.pop('pwd_error') }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+            {% endif %}
+            {% if request.session.get('pwd_success') %}
+            <div class="alert alert-success alert-dismissible fade show shadow-sm mb-4" role="alert">
+                <i class="fa-solid fa-circle-check me-2"></i> {{ request.session.pop('pwd_success') }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+            {% endif %}
+
+            <!-- Student List Card -->
+            <div class="card card-custom">
+                <div class="card-header bg-white py-3 border-0">
+                    <h5 class="fw-bold mb-0"><i class="fa-solid fa-users me-2 text-emerald" style="color: var(--office-primary);"></i> Student Transfer Certificates</h5>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover table-custom align-middle mb-0">
+                            <thead>
+                                <tr>
+                                    <th class="ps-4">Reg / Roll Number</th>
+                                    <th>Student Name</th>
+                                    <th>Conduct</th>
+                                    <th>Status</th>
+                                    <th>Rejection Reason</th>
+                                    <th class="text-end pe-4">Certificate Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for s in students %}
+                                <tr>
+                                    <td class="ps-4 font-semibold text-dark">{{ s.register_number }}</td>
+                                    <td class="fw-bold text-dark">{{ s.student_name }}</td>
+                                    <td>
+                                        <span class="badge bg-light text-secondary border">{{ s.conduct if s.conduct else 'Good' }}</span>
+                                    </td>
+                                    <td>
+                                        {% if s.status == "Approved" %}
+                                        <span class="badge badge-approved"><i class="fa-solid fa-check me-1"></i> Approved</span>
+                                        {% elif s.status == "Rejected" %}
+                                        <span class="badge badge-rejected"><i class="fa-solid fa-xmark me-1"></i> Rejected</span>
+                                        {% else %}
+                                        <span class="badge badge-pending"><i class="fa-solid fa-clock me-1"></i> {{ s.status }}</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if s.rejection_reason %}
+                                        <span class="text-danger fs-7 fw-semibold">{{ s.rejection_reason }}</span>
+                                        {% else %}
+                                        <span class="text-muted fs-7">-</span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="text-end pe-4">
+                                        <div class="btn-group">
+                                            <button class="btn btn-sm btn-outline-primary" onclick="openPreviewModal('{{ s.register_number }}', '{{ s.student_name }}')">
+                                                <i class="fa-solid fa-eye me-1"></i> Preview
+                                            </button>
+                                            <a href="/tc/download-pdf/{{ department }}/{{ class_name|replace(' ', '_') }}/{{ s.register_number }}" class="btn btn-sm btn-outline-secondary">
+                                                <i class="fa-solid fa-file-pdf me-1"></i> PDF
+                                            </a>
+                                            <a href="/tc/download-html/{{ department }}/{{ class_name|replace(' ', '_') }}/{{ s.register_number }}" class="btn btn-sm btn-outline-secondary">
+                                                <i class="fa-solid fa-code me-1"></i> HTML
+                                            </a>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
                     </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Student List Card -->
-        <div class="card card-custom">
-            <div class="card-header bg-white py-3 border-0">
-                <h5 class="fw-bold mb-0"><i class="fa-solid fa-users me-2 text-emerald" style="color: var(--office-primary);"></i> Student Transfer Certificates</h5>
-            </div>
-            <div class="card-body p-0">
-                <div class="table-responsive">
-                    <table class="table table-hover table-custom align-middle mb-0">
-                        <thead>
-                            <tr>
-                                <th class="ps-4">Reg / Roll Number</th>
-                                <th>Student Name</th>
-                                <th>Conduct</th>
-                                <th>Status</th>
-                                <th>Rejection Reason</th>
-                                <th class="text-end pe-4">Certificate Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for s in students %}
-                            <tr>
-                                <td class="ps-4 font-semibold text-dark">{{ s.register_number }}</td>
-                                <td class="fw-bold text-dark">{{ s.student_name }}</td>
-                                <td>
-                                    <span class="badge bg-light text-secondary border">{{ s.conduct if s.conduct else 'Good' }}</span>
-                                </td>
-                                <td>
-                                    {% if s.status == "Approved" %}
-                                    <span class="badge badge-approved"><i class="fa-solid fa-check me-1"></i> Approved</span>
-                                    {% elif s.status == "Rejected" %}
-                                    <span class="badge badge-rejected"><i class="fa-solid fa-xmark me-1"></i> Rejected</span>
-                                    {% else %}
-                                    <span class="badge badge-pending"><i class="fa-solid fa-clock me-1"></i> {{ s.status }}</span>
-                                    {% endif %}
-                                </td>
-                                <td>
-                                    {% if s.rejection_reason %}
-                                    <span class="text-danger fs-7 fw-semibold">{{ s.rejection_reason }}</span>
-                                    {% else %}
-                                    <span class="text-muted fs-7">-</span>
-                                    {% endif %}
-                                </td>
-                                <td class="text-end pe-4">
-                                    <div class="btn-group">
-                                        <button class="btn btn-sm btn-outline-primary" onclick="openPreviewModal('{{ s.register_number }}', '{{ s.student_name }}')">
-                                            <i class="fa-solid fa-eye me-1"></i> Preview
-                                        </button>
-                                        <a href="/tc/download-pdf/{{ department }}/{{ class_name|replace(' ', '_') }}/{{ s.register_number }}" class="btn btn-sm btn-outline-secondary">
-                                            <i class="fa-solid fa-file-pdf me-1"></i> PDF
-                                        </a>
-                                        <a href="/tc/download-html/{{ department }}/{{ class_name|replace(' ', '_') }}/{{ s.register_number }}" class="btn btn-sm btn-outline-secondary">
-                                            <i class="fa-solid fa-code me-1"></i> HTML
-                                        </a>
-                                    </div>
-                                </td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-
-    </main>
-
-    <!-- Preview Modal -->
-    <div class="modal fade" id="previewModal" tabindex="-1">
-        <div class="modal-dialog modal-xl modal-dialog-centered">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title fw-bold" id="modalTitle">Certificate Preview</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body p-0">
-                    <iframe id="previewFrame" class="preview-iframe" src=""></iframe>
                 </div>
             </div>
         </div>
     </div>
+</div>
 
-    <!-- Bootstrap Bundle JS -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script>
-        function openPreviewModal(regNo, studentName) {
-            document.getElementById('modalTitle').innerText = 'TC Preview - ' + studentName + ' (' + regNo + ')';
-            var dept = "{{ department }}";
-            var class_param = "{{ class_name }}".replace(/ /g, '_');
-            var url = '/tc/preview/html/' + dept + '/' + class_param + '/' + regNo;
-            document.getElementById('previewFrame').src = url;
-            var myModal = new bootstrap.Modal(document.getElementById('previewModal'));
-            myModal.show();
-        }
-    </script>
+<!-- Preview Modal -->
+<div class="modal fade" id="previewModal" tabindex="-1">
+    <div class="modal-dialog modal-xl modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title fw-bold" id="modalTitle">Certificate Preview</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-0">
+                <iframe id="previewFrame" class="preview-iframe" src=""></iframe>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Change Password Modal -->
+<div class="modal fade" id="changePasswordModal" tabindex="-1" aria-labelledby="changePasswordModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title fw-bold" id="changePasswordModalLabel"><i class="fa-solid fa-key me-2"></i> Change Password</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form action="/change-password" method="post">
+                <div class="modal-body p-4">
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Current Password</label>
+                        <input type="password" name="current_password" class="form-control" placeholder="Enter current password" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">New Password</label>
+                        <input type="password" name="new_password" class="form-control" placeholder="Enter new password" required minlength="4">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Confirm New Password</label>
+                        <input type="password" name="confirm_password" class="form-control" placeholder="Confirm new password" required minlength="4">
+                    </div>
+                </div>
+                <div class="modal-footer bg-light">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-success px-4 fw-bold">Update Password</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Bootstrap Bundle JS -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    function openPreviewModal(regNo, studentName) {
+        document.getElementById('modalTitle').innerText = 'TC Preview - ' + studentName + ' (' + regNo + ')';
+        var dept = "{{ department }}";
+        var class_param = "{{ class_name }}".replace(/ /g, '_');
+        var url = '/tc/preview/html/' + dept + '/' + class_param + '/' + regNo;
+        document.getElementById('previewFrame').src = url;
+        var myModal = new bootstrap.Modal(document.getElementById('previewModal'));
+        myModal.show();
+    }
+</script>
 
 </body>
 </html>

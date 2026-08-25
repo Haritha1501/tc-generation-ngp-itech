@@ -23,23 +23,35 @@ class DBUser(Base):
     username = Column(String, unique=True, index=True, nullable=False)
     password = Column(String, nullable=False)
     name = Column(String, nullable=False)
-    role = Column(String, nullable=False)          # 'advisor', 'hod', 'principal'
+    email = Column(String, nullable=True)
+    role = Column(String, nullable=False)          # 'advisor', 'hod', 'principal', 'office'
     department = Column(String, nullable=True)     # For advisor/hod
     class_name = Column(String, nullable=True)     # For advisor
 
 def init_db():
     Base.metadata.create_all(bind=engine)
+    # Check if email column exists in SQLite table
+    with engine.connect() as conn:
+        try:
+            from sqlalchemy import text
+            conn.execute(text("ALTER TABLE users ADD COLUMN email VARCHAR"))
+            conn.commit()
+        except Exception:
+            pass
 
 def seed_users():
     db = SessionLocal()
     try:
         print("Syncing users from JSON configuration files...")
 
-        def upsert_user(username, password, name, role, department=None, class_name=None):
+        def upsert_user(username, password, name, role, department=None, class_name=None, email=None):
             user = db.query(DBUser).filter(DBUser.username == username).first()
+            if not email:
+                email = f"{username}@drngpit.ac.in"
             if user:
                 user.password = password
                 user.name = name
+                user.email = email
                 user.role = role
                 user.department = department
                 user.class_name = class_name
@@ -48,6 +60,7 @@ def seed_users():
                     username=username,
                     password=password,
                     name=name,
+                    email=email,
                     role=role,
                     department=department,
                     class_name=class_name
@@ -66,7 +79,8 @@ def seed_users():
                     name=adv["name"],
                     role="advisor",
                     department=adv.get("department"),
-                    class_name=adv.get("class")
+                    class_name=adv.get("class"),
+                    email=adv.get("email")
                 )
 
         # 2. Seed/Sync HODs from data/hods.json
@@ -80,7 +94,8 @@ def seed_users():
                     password=hod["password"],
                     name=hod["name"],
                     role="hod",
-                    department=hod.get("department")
+                    department=hod.get("department"),
+                    email=hod.get("email")
                 )
 
         # 3. Seed/Sync Principals from data/principal.json
@@ -93,7 +108,8 @@ def seed_users():
                     username=p["username"],
                     password=p["password"],
                     name=p["name"],
-                    role="principal"
+                    role="principal",
+                    email=p.get("email")
                 )
 
         # 4. Seed/Sync Office Users from data/office.json (or default fallback)
@@ -106,14 +122,16 @@ def seed_users():
                     username=off["username"],
                     password=off["password"],
                     name=off["name"],
-                    role="office"
+                    role="office",
+                    email=off.get("email")
                 )
         else:
             upsert_user(
                 username="office",
                 password="password123",
                 name="Central Office Administrator",
-                role="office"
+                role="office",
+                email="office@drngpit.ac.in"
             )
 
         db.commit()

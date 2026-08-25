@@ -302,6 +302,7 @@ def login(
         request.session["advisor"] = {
             "username": advisor_match.username,
             "name": advisor_match.name,
+            "email": advisor_match.email or f"{advisor_match.username}@drngpit.ac.in",
             "department": advisor_match.department,
             "class": advisor_match.class_name
         }
@@ -990,6 +991,7 @@ def hod_login(
         request.session["hod"] = {
             "username": hod_match.username,
             "name": hod_match.name,
+            "email": hod_match.email or f"hod.{hod_match.department.lower()}@drngpit.ac.in",
             "department": hod_match.department
         }
         return RedirectResponse(url="/hod", status_code=303)
@@ -1255,7 +1257,8 @@ def principal_login(
     if principal_match:
         request.session["principal"] = {
             "username": principal_match.username,
-            "name": principal_match.name
+            "name": principal_match.name,
+            "email": principal_match.email or "principal@drngpit.ac.in"
         }
         return RedirectResponse(url="/principal", status_code=303)
     else:
@@ -1595,7 +1598,8 @@ def office_login(
     if office_match:
         request.session["office"] = {
             "username": office_match.username,
-            "name": office_match.name
+            "name": office_match.name,
+            "email": office_match.email or "office@drngpit.ac.in"
         }
         return RedirectResponse(url="/office", status_code=303)
     else:
@@ -1834,6 +1838,62 @@ def office_notify_advisor(
     write_audit_log(office["username"], f"Office Notify Advisor for {student_name}", identifier, department, class_name)
     request.session["office_notify_success"] = True
     return RedirectResponse(url="/office", status_code=303)
+
+
+# ================= COMMON PASSWORD CHANGE ROUTE =================
+
+@app.post("/change-password")
+def change_password(
+    request: Request,
+    current_password: str = Form(...),
+    new_password: str = Form(...),
+    confirm_password: str = Form(...),
+    db: Session = Depends(get_db)
+):
+    # Check session user
+    user_info = None
+    role = None
+    redirect_url = "/"
+    
+    if request.session.get("advisor"):
+        user_info = request.session.get("advisor")
+        role = "advisor"
+        redirect_url = "/advisor"
+    elif request.session.get("hod"):
+        user_info = request.session.get("hod")
+        role = "hod"
+        redirect_url = "/hod"
+    elif request.session.get("principal"):
+        user_info = request.session.get("principal")
+        role = "principal"
+        redirect_url = "/principal"
+    elif request.session.get("office"):
+        user_info = request.session.get("office")
+        role = "office"
+        redirect_url = "/office"
+
+    if not user_info:
+        return RedirectResponse(url="/", status_code=303)
+
+    if new_password != confirm_password:
+        request.session["pwd_error"] = "New password and confirmation do not match."
+        return RedirectResponse(url=redirect_url, status_code=303)
+
+    if len(new_password) < 4:
+        request.session["pwd_error"] = "Password must be at least 4 characters long."
+        return RedirectResponse(url=redirect_url, status_code=303)
+
+    db_user = db.query(DBUser).filter(DBUser.username == user_info["username"]).first()
+    if not db_user or db_user.password != current_password:
+        request.session["pwd_error"] = "Current password is incorrect."
+        return RedirectResponse(url=redirect_url, status_code=303)
+
+    db_user.password = new_password
+    db.commit()
+
+    request.session["pwd_success"] = "Password changed successfully!"
+    return RedirectResponse(url=redirect_url, status_code=303)
+
 
 if __name__ == "__main__":
     import uvicorn

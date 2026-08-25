@@ -8,29 +8,22 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <!-- FontAwesome for icons -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <!-- Custom Sidebar Layout CSS -->
+    <link href="/static/css/sidebar.css" rel="stylesheet">
     <style>
-        body {
-            background-color: #f4f6f9;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            color: #333;
-        }
-        .navbar {
-            background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-        }
         .card {
             border: none;
-            border-radius: 8px;
-            box-shadow: 0 2px 12px rgba(0,0,0,0.05);
+            border-radius: 12px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.04);
             background: #ffffff;
             margin-bottom: 20px;
         }
         .card-header-slate {
-            background-color: #2c3e50;
+            background-color: #0f2b5c;
             color: white;
             font-weight: 600;
-            border-top-left-radius: 8px;
-            border-top-right-radius: 8px;
+            border-top-left-radius: 12px;
+            border-top-right-radius: 12px;
             padding: 15px 20px;
         }
         .student-thumb {
@@ -46,12 +39,12 @@
             border-radius: 50px;
         }
         .btn-slate {
-            background-color: #2c3e50;
+            background-color: #0f2b5c;
             color: white;
             border: none;
         }
         .btn-slate:hover {
-            background-color: #34495e;
+            background-color: #153268;
             color: white;
         }
         .status-submitted { background-color: #fff3cd; color: #664d03; }
@@ -67,7 +60,7 @@
             border: none;
         }
         .card-header-slate .nav-tabs .nav-link.active {
-            color: #2c3e50;
+            color: #0f2b5c;
             background-color: #ffffff;
             border-radius: 4px 4px 0 0;
         }
@@ -80,40 +73,93 @@
 </head>
 <body>
 
-<!-- Header Navbar -->
-<nav class="navbar navbar-expand-lg navbar-dark px-4 py-3">
-    <div class="container-fluid">
-        <a class="navbar-brand" href="/principal">
-            <i class="fa-solid fa-crown me-2"></i> Principal Portal - final Approval
-        </a>
-        <div class="d-flex align-items-center">
-            <a href="/principal" class="btn btn-outline-light btn-sm me-2">
-                <i class="fa-solid fa-arrow-left"></i> Back to Dashboard
-            </a>
-            <a href="/principal/logout" class="btn btn-outline-light btn-sm">
-                <i class="fa-solid fa-right-from-bracket"></i> Logout
+<div class="app-wrapper">
+    <!-- Left Sidebar -->
+    <aside class="app-sidebar" id="sidebar">
+        <div>
+            <!-- Branding Header -->
+            <div class="sidebar-header">
+                <a href="/principal" class="sidebar-brand">
+                    <div class="sidebar-brand-icon">
+                        <i class="fa-solid fa-crown"></i>
+                    </div>
+                    <div>
+                        <div class="sidebar-brand-title">Dr. NGPIT</div>
+                        <div class="sidebar-brand-subtitle">TC Generator System</div>
+                    </div>
+                </a>
+            </div>
+
+            <!-- User Profile Box -->
+            <div class="sidebar-user-box">
+                <div class="user-avatar">
+                    <i class="fa-solid fa-user-tie"></i>
+                </div>
+                <div class="user-name">{{ principal.name }}</div>
+                <div class="user-email">
+                    <i class="fa-regular fa-envelope"></i> {{ principal.email or 'principal@drngpit.ac.in' }}
+                </div>
+                <div class="user-email">
+                    <i class="fa-solid fa-layer-group"></i> Executive Verification
+                </div>
+                <div class="mt-2">
+                    <span class="user-badge">Executive Portal</span>
+                </div>
+            </div>
+
+            <!-- Navigation Links -->
+            <nav class="sidebar-nav">
+                <div class="nav-section-title">Navigation</div>
+                <a href="/principal" class="nav-link">
+                    <i class="fa-solid fa-arrow-left"></i>
+                    <span>Back to Dashboard</span>
+                </a>
+                <a href="#" class="nav-link active">
+                    <i class="fa-solid fa-signature"></i>
+                    <span>Verifying: {{ class_name }}</span>
+                </a>
+            </nav>
+        </div>
+
+        <!-- Sidebar Footer Controls -->
+        <div class="sidebar-footer">
+            <button class="btn-change-pwd" data-bs-toggle="modal" data-bs-target="#changePasswordModal">
+                <i class="fa-solid fa-key me-1"></i> Change Password
+            </button>
+            <a href="/principal/logout" class="btn-sidebar-logout">
+                <i class="fa-solid fa-right-from-bracket"></i>
+                <span>Log Out</span>
             </a>
         </div>
-    </div>
-</nav>
+    </aside>
 
-<div class="container py-4">
-    <!-- Class Header Card -->
-    <div class="card p-3 mb-4 shadow-sm bg-white">
-        <div class="row align-items-center">
-            <div class="col-md-7">
-                <span class="badge bg-secondary mb-2">{{ department }} Department</span>
-                <h2 class="h4 mb-1 text-primary fw-bold">{{ class_name }}</h2>
-                <p class="text-muted mb-0">HOD Review Status: <strong class="text-success">{{ submission.status }}</strong> | HOD Approvals: {{ class_stats.hod_approved }} / {{ class_stats.total }}</p>
+    <!-- Main Content Area -->
+    <div class="app-main">
+        <!-- Mobile Navbar Header -->
+        <div class="mobile-navbar">
+            <div class="d-flex align-items-center gap-2">
+                <i class="fa-solid fa-crown fs-4"></i>
+                <span class="fw-bold">Verify Batch - {{ class_name }}</span>
             </div>
-            <div class="col-md-5 text-md-end mt-3 mt-md-0">
-                <div class="d-inline-flex gap-2">
-                    <form action="/principal/action/class" method="post" onsubmit="return confirm('Are you sure you want to APPROVE and SIGN certificates for this entire class? This will regenerate final certificates with your official digital signature.');">
+            <button class="btn btn-outline-light btn-sm" onclick="document.getElementById('sidebar').classList.toggle('show')">
+                <i class="fa-solid fa-bars"></i>
+            </button>
+        </div>
+
+        <div class="main-content py-4 px-4">
+            <!-- Top Header & Action Buttons -->
+            <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-4 pb-2 border-bottom gap-3">
+                <div>
+                    <h1 class="h3 fw-bold text-dark mb-1">Verify Batch: {{ class_name }}</h1>
+                    <p class="text-muted mb-0">Department: <strong>{{ department }}</strong> | Advisor: <strong>{{ advisor_name }}</strong> | HOD Approval: <strong class="text-success">{{ hod_status }}</strong></p>
+                </div>
+                <div class="d-flex gap-2">
+                    <form action="/principal/action/class" method="post" onsubmit="return confirm('Are you sure you want to APPROVE and digitally SIGN all certificates for this entire class?');">
                         <input type="hidden" name="department" value="{{ department }}">
                         <input type="hidden" name="class_name" value="{{ class_name }}">
                         <input type="hidden" name="action" value="approve_all">
                         <button type="submit" class="btn btn-success fw-bold shadow-sm">
-                            <i class="fa-solid fa-signature me-1"></i> Approve & Sign Entire Class
+                            <i class="fa-solid fa-file-signature me-1"></i> Approve & Sign Entire Class
                         </button>
                     </form>
                     
@@ -122,281 +168,144 @@
                     </button>
                 </div>
             </div>
-        </div>
-    </div>
 
-    <!-- Stats summary for this class -->
-    <div class="row mb-3">
-        <div class="col-md-4 mb-2">
-            <div class="card bg-light text-center py-2 shadow-sm border-0">
-                <h5 class="fw-bold mb-0 text-dark">{{ class_stats.total }}</h5>
-                <span class="text-muted fs-7 text-uppercase">Total Students</span>
+            <!-- Flash Alerts -->
+            {% if request.session.get('pwd_error') %}
+            <div class="alert alert-danger alert-dismissible fade show shadow-sm" role="alert">
+                <i class="fa-solid fa-triangle-exclamation me-2"></i> {{ request.session.pop('pwd_error') }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
             </div>
-        </div>
-        <div class="col-md-4 mb-2">
-            <div class="card bg-success-subtle text-center py-2 shadow-sm border-0">
-                <h5 class="fw-bold mb-0 text-success">{{ class_stats.approved }}</h5>
-                <span class="text-success fs-7 text-uppercase">Final Approved</span>
+            {% endif %}
+            {% if request.session.get('pwd_success') %}
+            <div class="alert alert-success alert-dismissible fade show shadow-sm" role="alert">
+                <i class="fa-solid fa-circle-check me-2"></i> {{ request.session.pop('pwd_success') }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
             </div>
-        </div>
-        <div class="col-md-4 mb-2">
-            <div class="card bg-danger-subtle text-center py-2 shadow-sm border-0">
-                <h5 class="fw-bold mb-0 text-danger">{{ class_stats.rejected }}</h5>
-                <span class="text-danger fs-7 text-uppercase">Final Rejected</span>
-            </div>
-        </div>
-    </div>
+            {% endif %}
 
-    <!-- Search & Filters -->
-    <div class="card shadow-sm p-3 mb-4">
-        <div class="row g-3">
-            <div class="col-md-6">
-                <div class="input-group">
-                    <span class="input-group-text bg-white"><i class="fa-solid fa-magnifying-glass"></i></span>
-                    <input type="text" class="form-control" id="searchInput" placeholder="Search by Register Number or Name...">
+            <!-- Stats Summary -->
+            <div class="row mb-3">
+                <div class="col-md-3 mb-2">
+                    <div class="card bg-light text-center py-2 shadow-sm border-0">
+                        <h5 class="fw-bold mb-0 text-dark">{{ class_stats.total }}</h5>
+                        <span class="text-muted fs-7 text-uppercase">Total Students</span>
+                    </div>
+                </div>
+                <div class="col-md-3 mb-2">
+                    <div class="card bg-success-subtle text-center py-2 shadow-sm border-0">
+                        <h5 class="fw-bold mb-0 text-success">{{ class_stats.approved }}</h5>
+                        <span class="text-success fs-7 text-uppercase">Principal Approved</span>
+                    </div>
+                </div>
+                <div class="col-md-3 mb-2">
+                    <div class="card bg-warning-subtle text-center py-2 shadow-sm border-0">
+                        <h5 class="fw-bold mb-0 text-warning">{{ class_stats.total - class_stats.approved - class_stats.rejected }}</h5>
+                        <span class="text-warning fs-7 text-uppercase">Pending Verification</span>
+                    </div>
+                </div>
+                <div class="col-md-3 mb-2">
+                    <div class="card bg-danger-subtle text-center py-2 shadow-sm border-0">
+                        <h5 class="fw-bold mb-0 text-danger">{{ class_stats.rejected }}</h5>
+                        <span class="text-danger fs-7 text-uppercase">Rejected</span>
+                    </div>
                 </div>
             </div>
-            <div class="col-md-6">
-                <select class="form-select" id="statusFilter">
-                    <option value="all">All Student Statuses</option>
-                    <option value="Pending Principal">Pending Final Review</option>
-                    <option value="Approved">Approved Only</option>
-                    <option value="Rejected">Rejected Only</option>
-                </select>
-            </div>
-        </div>
-    </div>
 
-    <!-- Student Table -->
-    <!-- Student Table -->
-    <div class="card shadow-sm h-100">
-        <div class="card-header card-header-slate d-flex justify-content-between align-items-center">
-            <span><i class="fa-solid fa-list me-2"></i> Student Certificates List</span>
-            <ul class="nav nav-tabs card-header-tabs border-bottom-0" id="studentTab" role="tablist">
-                <li class="nav-item" role="presentation">
-                    <button class="nav-link active" id="all-tab" data-bs-toggle="tab" data-bs-target="#all-pane" type="button" role="tab" aria-controls="all-pane" aria-selected="true">
-                        All ({{ students|length }})
-                    </button>
-                </li>
-                <li class="nav-item" role="presentation">
-                    <button class="nav-link" id="pending-tab" data-bs-toggle="tab" data-bs-target="#pending-pane" type="button" role="tab" aria-controls="pending-pane" aria-selected="false">
-                        Pending
-                    </button>
-                </li>
-                <li class="nav-item d-flex align-items-center" role="presentation">
-                    <button class="nav-link" id="approved-tab" data-bs-toggle="tab" data-bs-target="#approved-pane" type="button" role="tab" aria-controls="approved-pane" aria-selected="false">
-                        Approved
-                    </button>
-                    {% if class_stats.approved > 0 %}
-                    <a href="/principal/download-final-zip/{{ department }}/{{ class_name|replace(' ', '_') }}" class="btn btn-light btn-sm text-success fw-bold ms-2 p-1 fs-8" title="Download Approved ZIP">
-                        <i class="fa-solid fa-file-zipper"></i> ZIP
-                    </a>
-                    {% endif %}
-                </li>
-            </ul>
-        </div>
-        <div class="card-body p-0">
-            <div class="tab-content" id="studentTabContent">
-                <!-- ALL TAB -->
-                <div class="tab-pane fade show active" id="all-pane" role="tabpanel" aria-labelledby="all-tab">
-                    <div class="table-responsive" style="max-height: 70vh; overflow-y: auto;">
-                        <table class="table align-middle mb-0">
+            <!-- Search & Filters -->
+            <div class="card shadow-sm p-3 mb-4">
+                <div class="row g-3">
+                    <div class="col-md-8">
+                        <div class="input-group">
+                            <span class="input-group-text bg-white"><i class="fa-solid fa-magnifying-glass"></i></span>
+                            <input type="text" class="form-control" id="searchInput" placeholder="Search by Register Number or Student Name...">
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <select class="form-select" id="statusFilter">
+                            <option value="all">All Verification Statuses</option>
+                            <option value="Pending Principal">Pending Final Approval</option>
+                            <option value="Approved">Signed & Approved</option>
+                            <option value="Rejected">Rejected</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Student Table -->
+            <div class="card shadow-sm h-100">
+                <div class="card-header card-header-slate d-flex justify-content-between align-items-center">
+                    <span><i class="fa-solid fa-list-check me-2"></i> Executive Certificate Sign Queue</span>
+                    <span class="badge bg-light text-dark">{{ students|length }} Certificates</span>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0" id="principalTable">
                             <thead class="table-light">
                                 <tr>
-                                    <th class="ps-3" style="width: 80px;">Photo</th>
+                                    <th class="ps-3">Photo</th>
                                     <th>Register No</th>
                                     <th>Student Name</th>
-                                    <th>Conduct</th>
-                                    <th>Status</th>
-                                    <th class="text-center" style="min-width: 250px;">Actions</th>
+                                    <th>HOD Status</th>
+                                    <th>Principal Status</th>
+                                    <th class="text-center" style="width: 250px;">Actions</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 {% for s in students %}
-                                <tr class="student-row" 
-                                    data-reg="{{ s.register_number }}" 
-                                    data-name="{{ s.student_name }}" 
+                                <tr data-reg="{{ s.register_number }}"
+                                    data-name="{{ s.student_name }}"
                                     data-status="{{ s.status }}">
                                     <td class="ps-3">
-                                        <img src="/generated/advisor/{{ department }}/{{ class_name|replace(' ', '_') }}/preview/{{ s.register_number }}.jpg" class="student-thumb" onerror="this.onerror=null; this.src='/static/images/principal.jpg';" alt="Photo">
+                                        <img src="/advisor/preview/photo/{{ department }}/{{ class_name|replace(' ', '_') }}/{{ s.register_number }}"
+                                             alt="Photo"
+                                             class="student-thumb"
+                                             onerror="this.src='/static/images/principal.jpg';">
                                     </td>
-                                    <td><code class="text-dark fw-bold">{{ s.register_number }}</code></td>
-                                    <td><strong>{{ s.student_name }}</strong></td>
+                                    <td><code>{{ s.register_number }}</code></td>
+                                    <td><strong class="text-dark">{{ s.student_name }}</strong></td>
                                     <td>
-                                        {% if s.conduct|lower == 'poor' %}
-                                        <span class="text-danger fw-bold"><i class="fa-solid fa-triangle-exclamation me-1"></i> Poor</span>
-                                        {% else %}
-                                        <span class="text-success">{{ s.conduct }}</span>
-                                        {% endif %}
+                                        <span class="badge bg-success-subtle text-success border border-success-subtle"><i class="fa-solid fa-check-double me-1"></i> HOD Approved</span>
                                     </td>
                                     <td>
-                                        {% if s.status == "Submitted to HOD" or s.status == "HOD Approved" or s.status == "Partially Approved" %}
-                                        <span class="badge status-submitted"><i class="fa-solid fa-hourglass-half"></i> Pending</span>
-                                        {% elif s.status == "Approved" %}
-                                        <span class="badge status-approved"><i class="fa-solid fa-circle-check"></i> Approved</span>
+                                        {% if s.status == "Approved" %}
+                                        <span class="badge status-approved"><i class="fa-solid fa-file-circle-check me-1"></i> Signed & Approved</span>
                                         {% elif s.status == "Rejected" %}
-                                        <span class="badge status-rejected"><i class="fa-solid fa-circle-xmark"></i> Rejected</span>
+                                        <span class="badge status-rejected"><i class="fa-solid fa-circle-xmark me-1"></i> Rejected</span>
                                         {% else %}
-                                        <span class="badge bg-secondary">{{ s.status }}</span>
+                                        <span class="badge status-submitted"><i class="fa-solid fa-hourglass-half me-1"></i> Pending Sign</span>
                                         {% endif %}
                                     </td>
                                     <td class="text-center">
                                         <div class="d-inline-flex gap-1">
-                                            <button class="btn btn-outline-primary btn-sm btn-preview" 
+                                            <button class="btn btn-outline-primary btn-sm btn-preview"
                                                     data-reg="{{ s.register_number }}"
                                                     data-name="{{ s.student_name }}">
                                                 <i class="fa-solid fa-eye me-1"></i> Preview
                                             </button>
+
                                             {% if s.status != "Approved" %}
-                                            <form action="/principal/action/student" method="post" class="m-0">
+                                            <form action="/principal/action/student" method="post" class="d-inline">
                                                 <input type="hidden" name="department" value="{{ department }}">
                                                 <input type="hidden" name="class_name" value="{{ class_name }}">
                                                 <input type="hidden" name="register_number" value="{{ s.register_number }}">
                                                 <input type="hidden" name="action" value="approve">
-                                                <button type="submit" class="btn btn-success btn-sm">
-                                                    <i class="fa-solid fa-signature me-1"></i> Approve
+                                                <button type="submit" class="btn btn-success btn-sm" title="Approve & Sign Student">
+                                                    <i class="fa-solid fa-check me-1"></i> Sign
                                                 </button>
                                             </form>
+                                            {% endif %}
+
+                                            {% if s.status != "Rejected" %}
                                             <button class="btn btn-danger btn-sm btn-reject-student"
                                                     data-reg="{{ s.register_number }}"
-                                                    data-name="{{ s.student_name }}">
-                                                <i class="fa-solid fa-xmark me-1"></i> Reject
+                                                    data-name="{{ s.student_name }}"
+                                                    title="Reject Student">
+                                                <i class="fa-solid fa-xmark"></i>
                                             </button>
                                             {% endif %}
                                         </div>
                                     </td>
                                 </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-
-                <!-- PENDING TAB -->
-                <div class="tab-pane fade" id="pending-pane" role="tabpanel" aria-labelledby="pending-tab">
-                    <div class="table-responsive" style="max-height: 70vh; overflow-y: auto;">
-                        <table class="table align-middle mb-0">
-                            <thead class="table-light">
-                                <tr>
-                                    <th class="ps-3" style="width: 80px;">Photo</th>
-                                    <th>Register No</th>
-                                    <th>Student Name</th>
-                                    <th>Conduct</th>
-                                    <th>HOD Review Status</th>
-                                    <th class="text-center" style="min-width: 250px;">Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for s in students %}
-                                {% if s.status != "Approved" %}
-                                <tr class="student-row" 
-                                    data-reg="{{ s.register_number }}" 
-                                    data-name="{{ s.student_name }}" 
-                                    data-status="{{ s.status }}">
-                                    <td class="ps-3">
-                                        <img src="/generated/advisor/{{ department }}/{{ class_name|replace(' ', '_') }}/preview/{{ s.register_number }}.jpg" class="student-thumb" onerror="this.onerror=null; this.src='/static/images/principal.jpg';" alt="Photo">
-                                    </td>
-                                    <td><code class="text-dark fw-bold">{{ s.register_number }}</code></td>
-                                    <td><strong>{{ s.student_name }}</strong></td>
-                                    <td>
-                                        {% if s.conduct|lower == 'poor' %}
-                                        <span class="text-danger fw-bold"><i class="fa-solid fa-triangle-exclamation me-1"></i> Poor</span>
-                                        {% else %}
-                                        <span class="text-success">{{ s.conduct }}</span>
-                                        {% endif %}
-                                    </td>
-                                    <td>
-                                        {% if s.parent_meeting_required %}
-                                        <span class="badge bg-warning text-dark mb-1 d-block w-fit">Parent Meeting Req</span>
-                                        {% endif %}
-                                        {% if s.remarks %}
-                                        <div class="text-muted fs-8 italic">Remarks: "{{ s.remarks }}"</div>
-                                        {% else %}
-                                        <div class="text-muted fs-8">-</div>
-                                        {% endif %}
-                                    </td>
-                                    <td class="text-center">
-                                        <div class="d-inline-flex gap-1">
-                                            <button class="btn btn-outline-primary btn-sm btn-preview" 
-                                                    data-reg="{{ s.register_number }}"
-                                                    data-name="{{ s.student_name }}">
-                                                <i class="fa-solid fa-eye me-1"></i> Preview
-                                            </button>
-                                            <form action="/principal/action/student" method="post" class="m-0">
-                                                <input type="hidden" name="department" value="{{ department }}">
-                                                <input type="hidden" name="class_name" value="{{ class_name }}">
-                                                <input type="hidden" name="register_number" value="{{ s.register_number }}">
-                                                <input type="hidden" name="action" value="approve">
-                                                <button type="submit" class="btn btn-success btn-sm">
-                                                    <i class="fa-solid fa-signature me-1"></i> Approve
-                                                </button>
-                                            </form>
-                                            <button class="btn btn-danger btn-sm btn-reject-student"
-                                                    data-reg="{{ s.register_number }}"
-                                                    data-name="{{ s.student_name }}">
-                                                <i class="fa-solid fa-xmark me-1"></i> Reject
-                                            </button>
-                                        </div>
-                                    </td>
-                                </tr>
-                                {% endif %}
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-
-                <!-- APPROVED TAB -->
-                <div class="tab-pane fade" id="approved-pane" role="tabpanel" aria-labelledby="approved-tab">
-                    <div class="table-responsive" style="max-height: 70vh; overflow-y: auto;">
-                        <table class="table align-middle mb-0">
-                            <thead class="table-light">
-                                <tr>
-                                    <th class="ps-3" style="width: 80px;">Photo</th>
-                                    <th>Register No</th>
-                                    <th>Student Name</th>
-                                    <th>Conduct</th>
-                                    <th>Status / Remarks</th>
-                                    <th class="text-center" style="min-width: 150px;">Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for s in students %}
-                                {% if s.status == "Approved" %}
-                                <tr class="student-row" 
-                                    data-reg="{{ s.register_number }}" 
-                                    data-name="{{ s.student_name }}" 
-                                    data-status="{{ s.status }}">
-                                    <td class="ps-3">
-                                        <img src="/generated/advisor/{{ department }}/{{ class_name|replace(' ', '_') }}/preview/{{ s.register_number }}.jpg" class="student-thumb" onerror="this.onerror=null; this.src='/static/images/principal.jpg';" alt="Photo">
-                                    </td>
-                                    <td><code class="text-dark fw-bold">{{ s.register_number }}</code></td>
-                                    <td><strong>{{ s.student_name }}</strong></td>
-                                    <td>
-                                        {% if s.conduct|lower == 'poor' %}
-                                        <span class="text-danger fw-bold"><i class="fa-solid fa-triangle-exclamation me-1"></i> Poor</span>
-                                        {% else %}
-                                        <span class="text-success">{{ s.conduct }}</span>
-                                        {% endif %}
-                                    </td>
-                                    <td>
-                                        <span class="badge status-approved py-1 px-2 mb-1 d-block w-fit"><i class="fa-solid fa-circle-check"></i> Approved</span>
-                                        {% if s.parent_meeting_required %}
-                                        <span class="badge bg-warning text-dark fs-9 py-0 px-1 mb-1 d-block w-fit">Parent Meeting Req</span>
-                                        {% endif %}
-                                        {% if s.remarks %}
-                                        <div class="text-muted fs-8 italic">Remarks: "{{ s.remarks }}"</div>
-                                        {% endif %}
-                                    </td>
-                                    <td class="text-center">
-                                        <button class="btn btn-outline-primary btn-sm btn-preview" 
-                                                data-reg="{{ s.register_number }}"
-                                                data-name="{{ s.student_name }}">
-                                            <i class="fa-solid fa-eye me-1"></i> Preview
-                                        </button>
-                                    </td>
-                                </tr>
-                                {% endif %}
                                 {% endfor %}
                             </tbody>
                         </table>
@@ -409,56 +318,57 @@
 
 <!-- Reject Class Modal -->
 <div class="modal fade" id="rejectClassModal" tabindex="-1" aria-labelledby="rejectClassModalLabel" aria-hidden="true">
-    <div class="modal-dialog">
+    <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title" id="rejectClassModalLabel"><i class="fa-solid fa-circle-xmark me-2"></i> Reject Entire Batch</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
             <form action="/principal/action/class" method="post">
-                <input type="hidden" name="department" value="{{ department }}">
-                <input type="hidden" name="class_name" value="{{ class_name }}">
-                <input type="hidden" name="action" value="reject_all">
-                <div class="modal-header bg-danger text-white">
-                    <h5 class="modal-title" id="rejectClassModalLabel"><i class="fa-solid fa-circle-xmark me-2"></i> Reject Entire Class Batch</h5>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
                 <div class="modal-body">
+                    <input type="hidden" name="department" value="{{ department }}">
+                    <input type="hidden" name="class_name" value="{{ class_name }}">
+                    <input type="hidden" name="action" value="reject_all">
+
+                    <p class="text-danger fw-semibold">Are you sure you want to reject the entire class <strong>{{ class_name }}</strong> back to HOD / Advisor?</p>
                     <div class="mb-3">
-                        <label for="rejection_reason_all" class="form-label fw-bold text-danger">Reason for Rejection (Mandatory)</label>
-                        <textarea class="form-control" id="rejection_reason_all" name="rejection_reason" rows="4" placeholder="Please specify the reason why the entire class batch is rejected by Principal..." required></textarea>
+                        <label for="rejection_reason_class" class="form-label fw-bold">Reason for Rejection <span class="text-danger">*</span></label>
+                        <textarea class="form-control" id="rejection_reason_class" name="rejection_reason" rows="3" placeholder="Specify why this batch is being rejected..." required></textarea>
                     </div>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="submit" class="btn btn-danger">Reject Batch</button>
+                    <button type="submit" class="btn btn-danger fw-bold">Reject Entire Batch</button>
                 </div>
             </form>
         </div>
     </div>
 </div>
 
-<!-- Reject Individual Student Modal -->
+<!-- Reject Student Modal -->
 <div class="modal fade" id="rejectStudentModal" tabindex="-1" aria-labelledby="rejectStudentModalLabel" aria-hidden="true">
-    <div class="modal-dialog">
+    <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title" id="rejectStudentModalLabel"><i class="fa-solid fa-user-xmark me-2"></i> Reject Student Certificate</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
             <form action="/principal/action/student" method="post">
-                <input type="hidden" name="department" value="{{ department }}">
-                <input type="hidden" name="class_name" value="{{ class_name }}">
-                <input type="hidden" name="register_number" id="reject_student_reg" value="">
-                <input type="hidden" name="action" value="reject">
-                <div class="modal-header bg-danger text-white">
-                    <h5 class="modal-title" id="rejectStudentModalLabel"><i class="fa-solid fa-circle-xmark me-2"></i> Reject Student Certificate</h5>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
                 <div class="modal-body">
-                    <p class="mb-2">Student Name: <strong id="reject_student_name_label"></strong></p>
-                    <p class="mb-3">Register No: <strong id="reject_student_reg_label"></strong></p>
-                    
+                    <input type="hidden" name="department" value="{{ department }}">
+                    <input type="hidden" name="class_name" value="{{ class_name }}">
+                    <input type="hidden" name="register_number" id="reject_student_reg" value="">
+                    <input type="hidden" name="action" value="reject">
+
+                    <p>Reject certificate for student: <strong id="reject_student_name_label"></strong> (<code id="reject_student_reg_label"></code>)</p>
                     <div class="mb-3">
-                        <label for="rejection_reason_student" class="form-label fw-bold text-danger">Reason for Rejection (Mandatory)</label>
-                        <textarea class="form-control" id="rejection_reason_student" name="rejection_reason" rows="3" placeholder="Explain the reason for rejecting this student's final TC..." required></textarea>
+                        <label for="rejection_reason_student" class="form-label fw-bold">Reason for Rejection <span class="text-danger">*</span></label>
+                        <textarea class="form-control" id="rejection_reason_student" name="rejection_reason" rows="3" placeholder="Reason for rejecting this student..." required></textarea>
                     </div>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="submit" class="btn btn-danger">Confirm Reject</button>
+                    <button type="submit" class="btn btn-danger fw-bold">Reject Certificate</button>
                 </div>
             </form>
         </div>
@@ -469,7 +379,7 @@
 <div class="modal fade" id="previewModal" tabindex="-1" aria-labelledby="previewModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-xl modal-dialog-centered">
         <div class="modal-content">
-            <div class="modal-header bg-dark text-white">
+            <div class="modal-header card-header-slate">
                 <h5 class="modal-title" id="previewModalLabel"><i class="fa-solid fa-file-invoice me-2"></i> Certificate Preview</h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
@@ -483,21 +393,51 @@
     </div>
 </div>
 
+<!-- Change Password Modal -->
+<div class="modal fade" id="changePasswordModal" tabindex="-1" aria-labelledby="changePasswordModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header card-header-slate text-white">
+                <h5 class="modal-title fw-bold" id="changePasswordModalLabel"><i class="fa-solid fa-key me-2"></i> Change Password</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form action="/change-password" method="post">
+                <div class="modal-body p-4">
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Current Password</label>
+                        <input type="password" name="current_password" class="form-control" placeholder="Enter current password" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">New Password</label>
+                        <input type="password" name="new_password" class="form-control" placeholder="Enter new password" required minlength="4">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Confirm New Password</label>
+                        <input type="password" name="confirm_password" class="form-control" placeholder="Confirm new password" required minlength="4">
+                    </div>
+                </div>
+                <div class="modal-footer bg-light">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-slate px-4 fw-bold">Update Password</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
 <!-- Bootstrap Bundle JS -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script>
     document.addEventListener('DOMContentLoaded', function() {
         const previewModal = new bootstrap.Modal(document.getElementById('previewModal'));
         const rejectStudentModal = new bootstrap.Modal(document.getElementById('rejectStudentModal'));
-        
         const previewFrame = document.getElementById('previewFrame');
         const previewTitle = document.getElementById('previewModalLabel');
         
         const searchInput = document.getElementById('searchInput');
         const statusFilter = document.getElementById('statusFilter');
-        const tableRows = document.querySelectorAll('.student-row');
+        const tableRows = document.querySelectorAll('#principalTable tbody tr');
         
-        // Preview Button
         document.querySelectorAll('.btn-preview').forEach(button => {
             button.addEventListener('click', function() {
                 const reg = this.getAttribute('data-reg');
@@ -508,7 +448,6 @@
             });
         });
         
-        // Individual Reject Button opens modal
         document.querySelectorAll('.btn-reject-student').forEach(button => {
             button.addEventListener('click', function() {
                 const reg = this.getAttribute('data-reg');
@@ -523,12 +462,10 @@
             });
         });
         
-        // Reset iframe source on modal close to stop content rendering
         document.getElementById('previewModal').addEventListener('hidden.bs.modal', function () {
             previewFrame.src = "about:blank";
         });
         
-        // Search & Filter Logic
         function filterTable() {
             const query = searchInput.value.toLowerCase();
             const statusVal = statusFilter.value;
@@ -555,8 +492,8 @@
             });
         }
         
-        searchInput.addEventListener('input', filterTable);
-        statusFilter.addEventListener('change', filterTable);
+        if (searchInput) searchInput.addEventListener('input', filterTable);
+        if (statusFilter) statusFilter.addEventListener('change', filterTable);
     });
 </script>
 </body>
