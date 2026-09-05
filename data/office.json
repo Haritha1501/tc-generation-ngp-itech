@@ -2,8 +2,8 @@
     "office_users": [
         {
             "username": "office",
-            "password": "password123",
-            "name": "Central Office Administrator"
+            "password": "off_pswd",
+            "name": "Dr. N.G.P. Institute of Technology - Office"
         }
     ]
 }

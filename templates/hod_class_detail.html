@@ -157,7 +157,7 @@
                     <h1 class="h3 fw-bold text-dark mb-1">Batch Review: {{ class_name }}</h1>
                     <p class="text-muted mb-0">Department: <strong>{{ department }}</strong> | Advisor: <strong>{{ submission.advisor }}</strong> | Submitted: {{ submission.submitted_time }}</p>
                 </div>
-                <div class="d-flex gap-2">
+                <div class="d-flex flex-wrap gap-2">
                     <form action="/hod/action/class" method="post" onsubmit="return confirm('Are you sure you want to APPROVE the entire class?');">
                         <input type="hidden" name="department" value="{{ department }}">
                         <input type="hidden" name="class_name" value="{{ class_name }}">
@@ -167,11 +167,37 @@
                         </button>
                     </form>
                     
+                    <form action="/hod/action/class" method="post" onsubmit="return confirm('Accept all students except those marked Rejected?');">
+                        <input type="hidden" name="department" value="{{ department }}">
+                        <input type="hidden" name="class_name" value="{{ class_name }}">
+                        <input type="hidden" name="action" value="approve_except_rejected">
+                        <button type="submit" class="btn btn-navy fw-bold shadow-sm">
+                            <i class="fa-solid fa-check-double me-1"></i> Accept Everyone Except Rejected
+                        </button>
+                    </form>
+                    
                     <button class="btn btn-danger fw-bold shadow-sm" data-bs-toggle="modal" data-bs-target="#rejectClassModal">
                         <i class="fa-solid fa-circle-xmark me-1"></i> Reject Entire Class
                     </button>
                 </div>
             </div>
+
+            <!-- Rejection Notifications Alert Banner -->
+            {% if notifications %}
+            <div class="alert alert-warning shadow-sm mb-4" role="alert">
+                <h6 class="alert-heading fw-bold mb-2"><i class="fa-solid fa-bell me-2"></i> Rejection Alerts for {{ department }} / {{ class_name }}</h6>
+                <ul class="mb-0 ps-3">
+                    {% for n in notifications %}
+                    {% if n.department == department and n.class_name == class_name %}
+                    <li>
+                        <strong>{{ n.student_name }}</strong> (<code>{{ n.identifier }}</code>) - Rejected by <strong>{{ n.rejected_by_name or n.rejected_by_role }}</strong>: <em>"{{ n.rejection_reason }}"</em>
+                        <span class="text-muted fs-7">({{ n.sent_at }})</span>
+                    </li>
+                    {% endif %}
+                    {% endfor %}
+                </ul>
+            </div>
+            {% endif %}
 
             <!-- Flash Alerts -->
             {% if request.session.get('pwd_error') %}
@@ -302,7 +328,7 @@
                                         {% elif s.status == "Approved" or s.status == "HOD Approved" %}
                                         <span class="badge status-approved"><i class="fa-solid fa-circle-check me-1"></i> Approved</span>
                                         {% elif s.status == "Rejected" %}
-                                        <span class="badge status-rejected"><i class="fa-solid fa-circle-xmark me-1"></i> Rejected</span>
+                                        <span class="badge status-rejected" title="{{ s.rejection_reason }}"><i class="fa-solid fa-circle-xmark me-1"></i> Rejected</span>
                                         {% else %}
                                         <span class="badge bg-light text-dark">{{ s.status }}</span>
                                         {% endif %}
@@ -321,8 +347,8 @@
                                                 <input type="hidden" name="class_name" value="{{ class_name }}">
                                                 <input type="hidden" name="register_number" value="{{ s.register_number }}">
                                                 <input type="hidden" name="action" value="approve">
-                                                <button type="submit" class="btn btn-success btn-sm" title="Approve Student">
-                                                    <i class="fa-solid fa-check"></i>
+                                                <button type="submit" class="btn btn-success btn-sm" title="Accept / Approve Student">
+                                                    <i class="fa-solid fa-check me-1"></i> Approve
                                                 </button>
                                             </form>
                                             {% endif %}
@@ -332,7 +358,7 @@
                                                     data-reg="{{ s.register_number }}"
                                                     data-name="{{ s.student_name }}"
                                                     title="Reject Student">
-                                                <i class="fa-solid fa-xmark"></i>
+                                                <i class="fa-solid fa-xmark me-1"></i> Reject
                                             </button>
                                             {% endif %}
                                         </div>

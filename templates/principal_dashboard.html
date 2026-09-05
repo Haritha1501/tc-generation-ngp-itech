@@ -139,6 +139,26 @@
                 </div>
             </div>
 
+            <!-- Rejection Notifications Alert -->
+            {% if notifications %}
+            <div class="alert alert-warning shadow-sm mb-4 border-start border-warning border-4 rounded-3">
+                <div class="d-flex align-items-center mb-2">
+                    <i class="fa-solid fa-bell text-warning fa-lg me-2"></i>
+                    <h5 class="alert-heading mb-0 fw-bold text-dark">Upstream Rejection Alerts (HOD & Dean)</h5>
+                </div>
+                <ul class="mb-0 ps-3">
+                    {% for n in notifications %}
+                    <li class="mb-1 fs-7">
+                        <strong>{{ n.student_name }}</strong> (<code>{{ n.identifier }}</code>) in {{ n.department }} / {{ n.class_name }} — 
+                        Rejected by <strong>{{ n.rejected_by_name or n.rejected_by_role }}</strong> — 
+                        <span class="text-dark fw-semibold">Reason:</span> <span class="text-danger fw-bold">{{ n.rejection_reason }}</span>
+                        <small class="text-muted ms-2">({{ n.sent_at }})</small>
+                    </li>
+                    {% endfor %}
+                </ul>
+            </div>
+            {% endif %}
+
             <!-- Flash Alerts -->
             {% if request.session.get('pwd_error') %}
             <div class="alert alert-danger alert-dismissible fade show shadow-sm" role="alert">
@@ -254,7 +274,7 @@
                                             <td>
                                                 {% if b.principal_status == "Pending Principal" %}
                                                 <span class="badge status-submitted"><i class="fa-solid fa-hourglass-half me-1"></i> Pending Approval</span>
-                                                {% elif b.principal_status == "Approved" %}
+                                                {% elif b.principal_status in ["Approved", "Partially Approved"] %}
                                                 <span class="badge status-approved"><i class="fa-solid fa-circle-check me-1"></i> Approved</span>
                                                 {% elif b.principal_status == "Rejected" %}
                                                 <span class="badge status-rejected"><i class="fa-solid fa-circle-xmark me-1"></i> Rejected</span>
@@ -264,7 +284,7 @@
                                                 <a href="/principal/class/{{ b.department }}/{{ b.class|replace(' ', '_') }}" class="btn btn-slate btn-sm">
                                                     <i class="fa-solid fa-signature me-1"></i> Review & Decision
                                                 </a>
-                                                {% if b.principal_status == "Approved" %}
+                                                {% if b.principal_status in ["Approved", "Partially Approved"] %}
                                                 <a href="/principal/download-final-zip/{{ b.department }}/{{ b.class|replace(' ', '_') }}" class="btn btn-outline-success btn-sm mt-1 mt-md-0" title="Download Final Signed ZIP">
                                                     <i class="fa-solid fa-file-zipper"></i> ZIP
                                                 </a>
@@ -328,7 +348,7 @@
                                             <td>
                                                 {% if b.principal_status == "Pending Principal" %}
                                                 <span class="badge status-submitted"><i class="fa-solid fa-hourglass-half me-1"></i> Pending</span>
-                                                {% elif b.principal_status == "Approved" %}
+                                                {% elif b.principal_status in ["Approved", "Partially Approved"] %}
                                                 <span class="badge status-approved"><i class="fa-solid fa-circle-check me-1"></i> Approved</span>
                                                 {% elif b.principal_status == "Rejected" %}
                                                 <span class="badge status-rejected"><i class="fa-solid fa-circle-xmark me-1"></i> Rejected</span>
@@ -338,7 +358,7 @@
                                                 <a href="/principal/class/{{ b.department }}/{{ b.class|replace(' ', '_') }}" class="btn btn-slate btn-sm">
                                                     <i class="fa-solid fa-signature me-1"></i> Verify & Sign
                                                 </a>
-                                                {% if b.principal_status == "Approved" %}
+                                                {% if b.principal_status in ["Approved", "Partially Approved"] %}
                                                 <a href="/principal/download-final-zip/{{ b.department }}/{{ b.class|replace(' ', '_') }}" class="btn btn-outline-success btn-sm mt-1 mt-md-0" title="Download Final Signed ZIP">
                                                     <i class="fa-solid fa-file-zipper"></i> ZIP
                                                 </a>

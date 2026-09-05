@@ -2,7 +2,7 @@
     "principals": [
         {
             "username": "principal",
-            "password": "password123",
+            "password": "principal_pswd",
             "name": "Dr. S.U. PRABHA (Principal)"
         }
     ]

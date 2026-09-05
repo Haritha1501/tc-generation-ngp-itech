@@ -48,15 +48,21 @@ def write_audit_log(user, action, student=None, department=None, class_name=None
 def load_principal_state(department, class_name):
     """
     Loads principal_approval.json for a class.
-    If it doesn't exist, initializes it from the HOD approval state.
+    If it doesn't exist, initializes it from Dean (for computer cluster) or HOD approval state.
     """
     final_folder = get_final_class_folder(department, class_name)
     final_folder.mkdir(parents=True, exist_ok=True)
     meta_file = get_principal_metadata_file(department, class_name)
     
-    # Load HOD approval state
+    from services.advisor.dean_dashboard_service import is_computer_cluster, load_dean_approval_state
     from services.advisor.hod_dashboard_service import load_approval_state
-    hod_state = load_approval_state(department, class_name)
+    
+    if is_computer_cluster(department):
+        upstream_state = load_dean_approval_state(department, class_name)
+        upstream_label = "Dean Approved"
+    else:
+        upstream_state = load_approval_state(department, class_name)
+        upstream_label = "HOD Approved"
     
     if meta_file.exists():
         try:
@@ -65,14 +71,13 @@ def load_principal_state(department, class_name):
         except Exception:
             pass
             
-    # Initialize from HOD state
-    # Keep student statuses and info as approved by HOD
+    # Initialize from upstream state
     students_state = []
-    for s in hod_state.get("students", []):
+    for s in upstream_state.get("students", []):
         students_state.append({
             "register_number": s["register_number"],
             "student_name": s["student_name"],
-            "status": s["status"], # Approved/Rejected/Submitted to HOD
+            "status": s["status"],
             "conduct": s.get("conduct", "Good"),
             "remarks": s.get("remarks", ""),
             "rejection_reason": s.get("rejection_reason", ""),
@@ -84,7 +89,7 @@ def load_principal_state(department, class_name):
         "approval_time": "",
         "department": department,
         "class": class_name,
-        "status": "HOD Approved" if hod_state.get("status") in ["Approved", "Partially Approved"] else hod_state.get("status"),
+        "status": upstream_label if upstream_state.get("status") in ["Approved", "Partially Approved"] else upstream_state.get("status"),
         "certificate_count": sum(1 for s in students_state if s["status"] == "Approved"),
         "students": students_state
     }
@@ -100,14 +105,17 @@ def save_principal_state(department, class_name, state):
 
 def get_batches_for_principal():
     """
-    Scans HOD approvals to identify batches that have been processed by the HOD,
-    along with their current Principal approval status.
+    Scans HOD and Dean approvals to identify batches ready for Principal approval.
+    Computer Cluster departments require Dean approval first.
+    Non-computer cluster departments require HOD approval.
     """
     batches = []
     hod_base = Path("approvals/hod")
     if not hod_base.exists():
         return batches
         
+    from services.advisor.dean_dashboard_service import is_computer_cluster, get_dean_approval_file
+    
     for dept_dir in hod_base.iterdir():
         if dept_dir.is_dir():
             for class_dir in dept_dir.iterdir():
@@ -122,9 +130,23 @@ def get_batches_for_principal():
                             class_name = hod_data["class"]
                             hod_status = hod_data["status"]
                             
-                            # Only HOD approved or partially approved batches are visible to Principal
-                            if hod_status in ["Approved", "Partially Approved", "Rejected"]:
-                                # Get advisor submission details for student count & submission time
+                            is_comp = is_computer_cluster(department)
+                            ready_for_principal = False
+                            
+                            if is_comp:
+                                # For computer cluster depts, must be approved by Dean
+                                d_app_file = get_dean_approval_file(department, class_name)
+                                if d_app_file.exists():
+                                    with open(d_app_file, "r", encoding="utf-8") as df:
+                                        dean_data = json.load(df)
+                                    if dean_data.get("status") in ["Approved", "Partially Approved", "Rejected"]:
+                                        ready_for_principal = True
+                            else:
+                                # For non-computer cluster depts, HOD approval is sufficient
+                                if hod_status in ["Approved", "Partially Approved", "Rejected"]:
+                                    ready_for_principal = True
+                                    
+                            if ready_for_principal:
                                 from services.advisor.hod_dashboard_service import get_advisor_class_folder
                                 advisor_folder = get_advisor_class_folder(department, class_name)
                                 submission_file = advisor_folder / "submission.json"
@@ -145,7 +167,6 @@ def get_batches_for_principal():
                                 if hod_data.get("workflow_type"):
                                     workflow_type = hod_data["workflow_type"]
 
-                                # Check if Principal has already approved
                                 p_meta_file = get_principal_metadata_file(department, class_name)
                                 p_status = "Pending Principal"
                                 p_time = ""
@@ -159,7 +180,7 @@ def get_batches_for_principal():
                                     "department": department,
                                     "class": class_name,
                                     "advisor": advisor_name,
-                                    "hod": "Dr. Alan Turing", # Default Mock HOD name
+                                    "hod": "HOD / Dean Approved",
                                     "student_count": student_count,
                                     "submission_time": sub_time,
                                     "hod_status": hod_status,
@@ -169,7 +190,6 @@ def get_batches_for_principal():
                                 })
                         except Exception:
                             pass
-
                             
     return batches
 

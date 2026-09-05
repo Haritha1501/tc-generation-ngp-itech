@@ -60,6 +60,9 @@ def send_rejection_notification(
     
     notification_entry = {
         "id": len(notifications) + 1,
+        "rejected_by_role": "office",
+        "rejected_by_name": office_user,
+        "target_roles": ["advisor"],
         "sent_by": office_user,
         "advisor_username": advisor_username,
         "student_name": student_name,
@@ -68,7 +71,41 @@ def send_rejection_notification(
         "class_name": class_name,
         "rejection_reason": rejection_reason,
         "sent_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-        "read": False
+        "read": False,
+        "read_by": []
+    }
+    
+    notifications.append(notification_entry)
+    save_notifications(notifications)
+    return notification_entry
+
+def send_pipeline_rejection_notification(
+    rejected_by_role: str,
+    rejected_by_name: str,
+    target_roles: list,
+    department: str,
+    class_name: str,
+    student_name: str,
+    register_number: str,
+    rejection_reason: str
+):
+    notifications = load_notifications()
+    advisor_username = find_advisor_username(department, class_name)
+    
+    notification_entry = {
+        "id": len(notifications) + 1,
+        "rejected_by_role": rejected_by_role,
+        "rejected_by_name": rejected_by_name,
+        "target_roles": target_roles,
+        "advisor_username": advisor_username,
+        "student_name": student_name or "Entire Class Batch",
+        "identifier": register_number or "CLASS_BATCH",
+        "department": department,
+        "class_name": class_name,
+        "rejection_reason": rejection_reason or "Rejected during review",
+        "sent_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        "read": False,
+        "read_by": []
     }
     
     notifications.append(notification_entry)
@@ -76,22 +113,36 @@ def send_rejection_notification(
     return notification_entry
 
 def get_notifications_for_advisor(advisor_username: str, department: str = None, class_name: str = None):
+    return get_notifications_for_role("advisor", department, class_name)
+
+def get_notifications_for_role(role: str, department: str = None, class_name: str = None):
     notifications = load_notifications()
     matched = []
     for n in notifications:
-        # Match by username or matching department & class
-        if n.get("advisor_username") == advisor_username:
-            matched.append(n)
-        elif department and class_name and n.get("department") == department and n.get("class_name") == class_name:
-            matched.append(n)
+        target_roles = n.get("target_roles", [])
+        if target_roles:
+            if role in target_roles:
+                if department and n.get("department"):
+                    if n.get("department") == department:
+                        matched.append(n)
+                else:
+                    matched.append(n)
+        else:
+            if role == "advisor":
+                if department and class_name and n.get("department") == department and n.get("class_name") == class_name:
+                    matched.append(n)
+                elif n.get("advisor_username") == advisor_username:
+                    matched.append(n)
     return matched
 
-def mark_notification_as_read(notification_id: int):
+def mark_notification_as_read(notification_id: int, username: str = None):
     notifications = load_notifications()
     updated = False
     for n in notifications:
         if n.get("id") == notification_id:
             n["read"] = True
+            if username and "read_by" in n and username not in n["read_by"]:
+                n["read_by"].append(username)
             updated = True
     if updated:
         save_notifications(notifications)

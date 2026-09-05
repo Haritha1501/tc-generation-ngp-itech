@@ -345,14 +345,14 @@
                                     {% endif %}
                                 </td>
                                 <td>
-                                    {% if b.status == "Approved" %}
+                                    {% if b.is_final_available or b.status == "Approved" or (b.principal_status in ["Approved", "Partially Approved"]) %}
                                     <span class="badge badge-status badge-approved"><i class="fa-solid fa-circle-check me-1"></i> Principal Approved — Final TC Available</span>
                                     {% elif b.status == "Rejected" %}
                                     <span class="badge badge-status badge-rejected"><i class="fa-solid fa-circle-xmark me-1"></i> Rejected</span>
                                     {% elif b.status in ["Submitted to Principal", "Direct Office Submission"] %}
                                     <span class="badge badge-status badge-pending"><i class="fa-solid fa-paper-plane me-1"></i> Waiting for Principal Approval</span>
-                                    {% elif b.status in ["Approved by HOD", "Partially Approved"] %}
-                                    <span class="badge badge-status badge-pending"><i class="fa-solid fa-clock me-1"></i> Pending Principal</span>
+                                    {% elif b.status in ["Approved by HOD", "Submitted to Dean", "Pending Dean"] %}
+                                    <span class="badge badge-status badge-pending"><i class="fa-solid fa-clock me-1"></i> Pending Principal / Dean</span>
                                     {% elif b.status == "Submitted to HOD" %}
                                     <span class="badge badge-status badge-pending"><i class="fa-solid fa-hourglass-start me-1"></i> Pending HOD</span>
                                     {% else %}
@@ -371,7 +371,7 @@
                                         </form>
                                         {% endif %}
 
-                                        {% if b.status == "Approved" %}
+                                        {% if b.is_final_available or b.status == "Approved" or (b.principal_status in ["Approved", "Partially Approved"]) %}
                                         <a href="/office/download-final-zip/{{ b.department }}/{{ b.class_name|replace(' ', '_') }}" class="btn btn-sm btn-success fw-bold px-3">
                                             <i class="fa-solid fa-file-zipper me-1"></i> Download Final TCs
                                         </a>

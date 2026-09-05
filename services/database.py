@@ -112,7 +112,22 @@ def seed_users():
                     email=p.get("email")
                 )
 
-        # 4. Seed/Sync Office Users from data/office.json (or default fallback)
+        # 4. Seed/Sync Deans from data/dean.json
+        dean_path = Path("data/dean.json")
+        if dean_path.exists():
+            with open(dean_path, "r", encoding="utf-8") as f:
+                data = json.load(f)
+            for d in data.get("deans", []):
+                upsert_user(
+                    username=d["username"],
+                    password=d["password"],
+                    name=d["name"],
+                    role="dean",
+                    department="COMPUTER_CLUSTER",
+                    email=d.get("email")
+                )
+
+        # 5. Seed/Sync Office Users from data/office.json (or default fallback)
         office_path = Path("data/office.json")
         if office_path.exists():
             with open(office_path, "r", encoding="utf-8") as f:

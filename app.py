@@ -40,6 +40,16 @@ from services.advisor.hod_dashboard_service import (
     get_hod_stats,
     generate_approved_zip
 )
+from services.advisor.dean_dashboard_service import (
+    is_computer_cluster,
+    COMPUTER_CLUSTER_DEPTS,
+    load_dean_approval_state,
+    save_dean_approval_state,
+    sync_dean_status_to_pipeline,
+    get_submitted_classes_for_dean,
+    get_dean_stats,
+    get_dean_approval_file
+)
 from services.advisor.principal_dashboard_service import (
     get_final_class_folder,
     get_principal_metadata_file,
@@ -53,7 +63,9 @@ from services.advisor.principal_dashboard_service import (
 )
 from services.office.notification_service import (
     send_rejection_notification,
-    get_notifications_for_advisor
+    send_pipeline_rejection_notification,
+    get_notifications_for_advisor,
+    get_notifications_for_role
 )
 from services.office.office_dashboard_service import (
     get_all_batches,
@@ -583,10 +595,10 @@ def download_class_zip(request: Request):
 
 def get_authorized_user(request: Request):
     """
-    Returns logged-in user dict if any of office, principal, hod, or advisor session exists.
+    Returns logged-in user dict if any of office, principal, dean, hod, or advisor session exists.
     Otherwise returns None.
     """
-    for role_key in ["office", "principal", "hod", "advisor"]:
+    for role_key in ["office", "principal", "dean", "hod", "advisor"]:
         user = request.session.get(role_key)
         if user:
             return user
@@ -638,7 +650,7 @@ def find_student_class_by_reg(register_number: str):
 
 def is_batch_principal_approved(department: str, class_name: str) -> bool:
     """
-    Returns True ONLY if the class/batch has been approved by the Principal
+    Returns True if the class/batch has been approved or partially approved by the Principal
     as recorded in principal_approval.json.
     """
     real_class_name = class_name.replace("_", " ")
@@ -647,7 +659,29 @@ def is_batch_principal_approved(department: str, class_name: str) -> bool:
         try:
             with open(p_meta_file, "r", encoding="utf-8") as f:
                 data = json.load(f)
-            return data.get("status") == "Approved"
+            return data.get("status") in ["Approved", "Partially Approved"]
+        except Exception:
+            pass
+    return False
+
+def is_student_principal_approved(department: str, class_name: str, register_number: str) -> bool:
+    """
+    Returns True if the specific student has been approved by the Principal
+    as recorded in principal_approval.json.
+    """
+    real_class_name = class_name.replace("_", " ")
+    p_meta_file = get_principal_metadata_file(department, real_class_name)
+    if p_meta_file.exists():
+        try:
+            with open(p_meta_file, "r", encoding="utf-8") as f:
+                data = json.load(f)
+            status = data.get("status")
+            if status in ["Approved", "Partially Approved"]:
+                reg_clean = str(register_number).strip()
+                for s in data.get("students", []):
+                    if str(s.get("register_number")).strip() == reg_clean:
+                        return s.get("status") == "Approved"
+                return True
         except Exception:
             pass
     return False
@@ -851,20 +885,121 @@ def inject_preview_styles(html_content: str) -> str:
         return html_content.replace("</head>", f"{PREVIEW_ONLY_CSS}\n</head>")
     return html_content + PREVIEW_ONLY_CSS
 
+def get_student_rejection_info(department: str, class_name: str, register_number: str) -> dict:
+    """
+    Checks HOD, Dean, and Principal approval records to determine if a student is rejected,
+    by whom, and the reason for rejection.
+    """
+    real_class_name = class_name.replace("_", " ")
+    c_name_underscore = real_class_name.replace(" ", "_")
+    reg_clean = str(register_number).strip()
+
+    # 1. Check HOD file
+    hod_file = Path("approvals/hod") / department / c_name_underscore / "approval.json"
+    if hod_file.exists():
+        try:
+            with open(hod_file, "r", encoding="utf-8") as f:
+                hod_data = json.load(f)
+            for s in hod_data.get("students", []):
+                if str(s.get("register_number")).strip() == reg_clean and s.get("status") == "Rejected":
+                    return {
+                        "is_rejected": True,
+                        "rejection_reason": s.get("rejection_reason") or "Not specified",
+                        "rejected_by": "Head of Department (HOD)"
+                    }
+        except Exception:
+            pass
+
+    # 2. Check Dean file
+    dean_file = Path("approvals/dean") / department / c_name_underscore / "dean_approval.json"
+    if dean_file.exists():
+        try:
+            with open(dean_file, "r", encoding="utf-8") as f:
+                dean_data = json.load(f)
+            for s in dean_data.get("students", []):
+                if str(s.get("register_number")).strip() == reg_clean and s.get("status") == "Rejected":
+                    return {
+                        "is_rejected": True,
+                        "rejection_reason": s.get("rejection_reason") or "Not specified",
+                        "rejected_by": f"Dean ({dean_data.get('dean_name', 'Dean')})"
+                    }
+        except Exception:
+            pass
+
+    # 3. Check Principal file
+    p_file = Path("generated/final") / department / c_name_underscore / "principal_approval.json"
+    if p_file.exists():
+        try:
+            with open(p_file, "r", encoding="utf-8") as f:
+                p_data = json.load(f)
+            for s in p_data.get("students", []):
+                if str(s.get("register_number")).strip() == reg_clean and s.get("status") == "Rejected":
+                    return {
+                        "is_rejected": True,
+                        "rejection_reason": s.get("rejection_reason") or "Not specified",
+                        "rejected_by": f"Principal ({p_data.get('principal_name', 'Principal')})"
+                    }
+        except Exception:
+            pass
+
+    return {"is_rejected": False, "rejection_reason": "", "rejected_by": ""}
+
+def inject_rejection_overlay(html_content: str, rejection_info: dict) -> str:
+    """
+    Injects a top red rejection banner and diagonal 'TC REJECTED' watermark
+    into the certificate HTML string.
+    """
+    rejected_by = rejection_info.get("rejected_by", "Authority")
+    rejection_reason = rejection_info.get("rejection_reason", "Not specified")
+
+    banner_html = f"""
+    <div style="background-color: #dc3545; color: #ffffff; padding: 14px 20px; text-align: center; font-family: 'Segoe UI', Arial, sans-serif; font-size: 16px; font-weight: bold; border-bottom: 3px solid #b02a37; margin-bottom: 15px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); border-radius: 6px;">
+        <div style="font-size: 18px; margin-bottom: 4px;">❌ TRANSFER CERTIFICATE REJECTED</div>
+        <div style="font-size: 13px; font-weight: 500; opacity: 0.95;">
+            <span><strong>Rejected By:</strong> {rejected_by}</span> &nbsp;|&nbsp; 
+            <span><strong>Reason:</strong> {rejection_reason}</span>
+        </div>
+    </div>
+    """
+
+    watermark_html = """
+    <div style="position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%) rotate(-35deg); font-size: 72px; font-weight: 900; color: rgba(220, 53, 69, 0.28); border: 8px solid rgba(220, 53, 69, 0.35); padding: 15px 40px; text-transform: uppercase; letter-spacing: 6px; pointer-events: none; z-index: 9999; white-space: nowrap; border-radius: 12px; font-family: Arial, sans-serif;">
+        TC REJECTED
+    </div>
+    """
+
+    if "<body>" in html_content:
+        html_content = html_content.replace("<body>", f"<body>\n{banner_html}")
+    else:
+        html_content = banner_html + html_content
+
+    if "</body>" in html_content:
+        html_content = html_content.replace("</body>", f"{watermark_html}\n</body>")
+    else:
+        html_content = html_content + watermark_html
+
+    return html_content
+
 @app.get("/tc/preview/html/{department}/{class_name}/{register_number}", response_class=HTMLResponse)
 @app.get("/advisor/preview/html/{department}/{class_name}/{register_number}", response_class=HTMLResponse)
+@app.get("/dean/preview/html/{department}/{class_name}/{register_number}", response_class=HTMLResponse)
+@app.get("/hod/preview/html/{department}/{class_name}/{register_number}", response_class=HTMLResponse)
+@app.get("/principal/preview/html/{department}/{class_name}/{register_number}", response_class=HTMLResponse)
+@app.get("/office/preview/html/{department}/{class_name}/{register_number}", response_class=HTMLResponse)
+@app.get("/preview/html/{department}/{class_name}/{register_number}", response_class=HTMLResponse)
 def preview_html_in_browser(department: str, class_name: str, register_number: str, request: Request):
     """
     Renders the generated student certificate HTML file in the browser for any authorized role.
     If the student is approved by Principal, it loads the signed final HTML.
     Otherwise, it loads the advisor-generated HTML.
+    If student is rejected by any portal authority, injects red alert banner and watermark.
     """
     user = get_authorized_user(request)
     if not user:
         return HTMLResponse(content="<h3>Unauthorized</h3>", status_code=401)
         
     real_class_name = class_name.replace("_", " ")
-    approved = is_batch_principal_approved(department, real_class_name)
+    student_approved = is_student_principal_approved(department, real_class_name, register_number)
     
     final_dir = get_final_class_folder(department, real_class_name)
     final_html = final_dir / "html" / f"{register_number}.html"
@@ -872,12 +1007,15 @@ def preview_html_in_browser(department: str, class_name: str, register_number: s
     class_dir = get_class_folder(department, real_class_name)
     advisor_html = class_dir / "html" / f"{register_number}.html"
     
-    if approved and final_html.exists():
+    if student_approved and final_html.exists():
         html_path = final_html
         preview_photo_prefix = f"/generated/final/{department}/{class_name}/preview/"
     elif advisor_html.exists():
         html_path = advisor_html
         preview_photo_prefix = f"/generated/advisor/{department}/{class_name}/preview/"
+    elif final_html.exists():
+        html_path = final_html
+        preview_photo_prefix = f"/generated/final/{department}/{class_name}/preview/"
     else:
         return HTMLResponse(content="<h3>Certificate HTML not generated yet.</h3>", status_code=404)
         
@@ -888,8 +1026,13 @@ def preview_html_in_browser(department: str, class_name: str, register_number: s
     html_content = html_content.replace("../static/", "/static/")
     html_content = html_content.replace("../preview/", preview_photo_prefix)
     
-    html_content = sanitize_html_approval_state(html_content, approved)
+    html_content = sanitize_html_approval_state(html_content, student_approved)
     html_content = inject_preview_styles(html_content)
+
+    rejection_info = get_student_rejection_info(department, class_name, register_number)
+    if rejection_info.get("is_rejected"):
+        html_content = inject_rejection_overlay(html_content, rejection_info)
+
     return HTMLResponse(content=html_content)
 
 
@@ -1012,6 +1155,7 @@ def hod_dashboard(request: Request):
     dept = hod["department"]
     classes = get_submitted_classes(dept)
     stats = get_hod_stats(dept)
+    notifications = get_notifications_for_role("hod", department=dept)
     
     return templates.TemplateResponse(
         request=request,
@@ -1020,7 +1164,8 @@ def hod_dashboard(request: Request):
             "request": request,
             "hod": hod,
             "classes": classes,
-            "stats": stats
+            "stats": stats,
+            "notifications": notifications
         }
     )
 
@@ -1032,7 +1177,6 @@ def hod_class_detail(request: Request, department: str, class_name: str):
         
     real_class_name = class_name.replace("_", " ")
     
-    # 1. Load submission metadata to verify advisor has submitted
     advisor_folder = get_advisor_class_folder(department, real_class_name)
     submission_file = advisor_folder / "submission.json"
     if not submission_file.exists():
@@ -1041,12 +1185,10 @@ def hod_class_detail(request: Request, department: str, class_name: str):
     with open(submission_file, "r") as f:
         submission = json.load(f)
         
-    # 2. Load HOD approval state
     approval_state = load_approval_state(department, real_class_name)
     students = approval_state.get("students", [])
     students.sort(key=lambda s: (STATUS_PRIORITY.get(s.get("status", ""), 99), s.get("register_number", "")))
     
-    # Calculate stats for the class
     total = len(students)
     approved = sum(1 for s in students if s["status"] == "Approved")
     rejected = sum(1 for s in students if s["status"] == "Rejected")
@@ -1059,6 +1201,8 @@ def hod_class_detail(request: Request, department: str, class_name: str):
         "parent_meeting": pm
     }
     
+    notifications = get_notifications_for_role("hod", department=department)
+    
     return templates.TemplateResponse(
         request=request,
         name="hod_class_detail.html",
@@ -1069,7 +1213,8 @@ def hod_class_detail(request: Request, department: str, class_name: str):
             "class_name": real_class_name,
             "submission": submission,
             "students": students,
-            "class_stats": class_stats
+            "class_stats": class_stats,
+            "notifications": notifications
         }
     )
 
@@ -1093,22 +1238,48 @@ def hod_action_class(
             s["status"] = "Approved"
             s["rejection_reason"] = ""
         write_audit_log(hod["username"], "HOD Approve Entire Class", None, department, class_name)
-            
+    elif action == "approve_except_rejected":
+        any_app = False
+        any_rej = False
+        for s in approval_state["students"]:
+            if s.get("status") == "Rejected":
+                any_rej = True
+            else:
+                s["status"] = "Approved"
+                s["rejection_reason"] = ""
+                any_app = True
+        if any_app and any_rej:
+            approval_state["status"] = "Partially Approved"
+        elif any_app:
+            approval_state["status"] = "Approved"
+        elif any_rej:
+            approval_state["status"] = "Rejected"
+        write_audit_log(hod["username"], "HOD Accept Everyone Except Rejected", None, department, class_name)
     elif action == "reject_all":
         if not rejection_reason or not rejection_reason.strip():
             raise HTTPException(status_code=400, detail="Rejection reason is mandatory.")
         approval_state["status"] = "Rejected"
+        reason = rejection_reason.strip()
         for s in approval_state["students"]:
             s["status"] = "Rejected"
-            s["rejection_reason"] = rejection_reason.strip()
+            s["rejection_reason"] = reason
+            send_pipeline_rejection_notification(
+                rejected_by_role="hod",
+                rejected_by_name=hod["name"],
+                target_roles=["advisor", "dean", "principal"],
+                department=department,
+                class_name=class_name,
+                student_name=s.get("student_name", ""),
+                register_number=s.get("register_number", ""),
+                rejection_reason=reason
+            )
         write_audit_log(hod["username"], f"HOD Reject Entire Class. Reason: {rejection_reason}", None, department, class_name)
             
     approval_state["last_updated"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     save_approval_state(department, class_name, approval_state)
     sync_status_to_advisor(department, class_name, approval_state)
     
-    # Generate the approved ZIP if approved
-    if action == "approve_all":
+    if action in ["approve_all", "approve_except_rejected"]:
         generate_approved_zip(department, class_name)
         
     class_name_param = class_name.replace(" ", "_")
@@ -1144,8 +1315,19 @@ def hod_action_student(
     elif action == "reject":
         if not rejection_reason or not rejection_reason.strip():
             raise HTTPException(status_code=400, detail="Rejection reason is mandatory.")
+        reason = rejection_reason.strip()
         student_match["status"] = "Rejected"
-        student_match["rejection_reason"] = rejection_reason.strip()
+        student_match["rejection_reason"] = reason
+        send_pipeline_rejection_notification(
+            rejected_by_role="hod",
+            rejected_by_name=hod["name"],
+            target_roles=["advisor", "dean", "principal"],
+            department=department,
+            class_name=class_name,
+            student_name=student_match.get("student_name", ""),
+            register_number=register_number,
+            rejection_reason=reason
+        )
         write_audit_log(hod["username"], f"HOD Reject Student. Reason: {rejection_reason}", register_number, department, class_name)
         
     elif action == "save_remarks":
@@ -1232,6 +1414,233 @@ def hod_preview_html_in_browser(department: str, class_name: str, register_numbe
     return HTMLResponse(content=html_content)
 
 
+# ================= DEAN PORTAL (COMPUTER CLUSTER) =================
+
+@app.get("/dean/login", response_class=HTMLResponse)
+def dean_login_page(request: Request):
+    if request.session.get("dean"):
+        return RedirectResponse(url="/dean")
+    return templates.TemplateResponse(request=request, name="dean_login.html", context={"error": None})
+
+@app.post("/dean/login")
+def dean_login(
+    request: Request, 
+    username: str = Form(...), 
+    password: str = Form(...),
+    db: Session = Depends(get_db)
+):
+    dean_match = db.query(DBUser).filter(
+        DBUser.username == username,
+        DBUser.password == password,
+        DBUser.role == "dean"
+    ).first()
+            
+    if dean_match:
+        request.session["dean"] = {
+            "username": dean_match.username,
+            "name": dean_match.name,
+            "email": dean_match.email or "dean.computer@drngpit.ac.in",
+            "title": "Dean - Computer Cluster",
+            "departments": COMPUTER_CLUSTER_DEPTS
+        }
+        return RedirectResponse(url="/dean", status_code=303)
+    else:
+        return templates.TemplateResponse(request=request, name="dean_login.html", context={"error": "Invalid username or password."})
+
+@app.get("/dean/logout")
+def dean_logout(request: Request):
+    request.session.clear()
+    return RedirectResponse(url="/")
+
+@app.get("/dean")
+def dean_dashboard(request: Request):
+    dean = request.session.get("dean")
+    if not dean:
+        return RedirectResponse(url="/dean/login")
+        
+    classes = get_submitted_classes_for_dean()
+    stats = get_dean_stats()
+    notifications = get_notifications_for_role("dean")
+    
+    return templates.TemplateResponse(
+        request=request,
+        name="dean_dashboard.html",
+        context={
+            "request": request,
+            "dean": dean,
+            "classes": classes,
+            "stats": stats,
+            "notifications": notifications
+        }
+    )
+
+@app.get("/dean/class/{department}/{class_name}")
+def dean_class_detail(request: Request, department: str, class_name: str):
+    dean = request.session.get("dean")
+    if not dean:
+        return RedirectResponse(url="/dean/login")
+        
+    real_class_name = class_name.replace("_", " ")
+    
+    if not is_computer_cluster(department):
+        raise HTTPException(status_code=403, detail="Dean portal is restricted to Computer Cluster departments (CSE, AIDS, IT, CS, CSBS).")
+        
+    hod_app_file = get_approval_file(department, real_class_name)
+    if not hod_app_file.exists():
+        raise HTTPException(status_code=404, detail="HOD approval file not found for this class.")
+        
+    hod_state = load_approval_state(department, real_class_name)
+    dean_state = load_dean_approval_state(department, real_class_name)
+    
+    students = dean_state.get("students", [])
+    students.sort(key=lambda s: (STATUS_PRIORITY.get(s.get("status", ""), 99), s.get("register_number", "")))
+    
+    total = len(students)
+    approved = sum(1 for s in students if s["status"] == "Approved")
+    rejected = sum(1 for s in students if s["status"] == "Rejected")
+    
+    class_stats = {
+        "total": total,
+        "approved": approved,
+        "rejected": rejected
+    }
+    
+    notifications = get_notifications_for_role("dean", department=department)
+    
+    return templates.TemplateResponse(
+        request=request,
+        name="dean_class_detail.html",
+        context={
+            "request": request,
+            "dean": dean,
+            "department": department,
+            "class_name": real_class_name,
+            "hod_status": hod_state.get("status", "Approved"),
+            "dean_status": dean_state.get("status", "Pending Dean"),
+            "students": students,
+            "class_stats": class_stats,
+            "notifications": notifications
+        }
+    )
+
+@app.post("/dean/action/class")
+def dean_action_class(
+    request: Request,
+    department: str = Form(...),
+    class_name: str = Form(...),
+    action: str = Form(...),
+    rejection_reason: str = Form(None)
+):
+    dean = request.session.get("dean")
+    if not dean:
+        return RedirectResponse(url="/dean/login", status_code=303)
+        
+    real_class_name = class_name.replace("_", " ")
+    state = load_dean_approval_state(department, real_class_name)
+    
+    if action == "approve_all":
+        state["status"] = "Approved"
+        state["last_updated"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        for s in state.get("students", []):
+            s["status"] = "Approved"
+            s["rejection_reason"] = ""
+        write_audit_log(dean["username"], "Dean Approve Entire Class", None, department, real_class_name)
+    elif action == "approve_except_rejected":
+        any_app = False
+        any_rej = False
+        state["last_updated"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        for s in state.get("students", []):
+            if s.get("status") == "Rejected":
+                any_rej = True
+            else:
+                s["status"] = "Approved"
+                s["rejection_reason"] = ""
+                any_app = True
+        if any_app and any_rej:
+            state["status"] = "Partially Approved"
+        elif any_app:
+            state["status"] = "Approved"
+        elif any_rej:
+            state["status"] = "Rejected"
+        write_audit_log(dean["username"], "Dean Accept Everyone Except Rejected", None, department, real_class_name)
+    elif action == "reject_all":
+        state["status"] = "Rejected"
+        state["last_updated"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        reason = rejection_reason or "Rejected by Dean"
+        for s in state.get("students", []):
+            s["status"] = "Rejected"
+            s["rejection_reason"] = reason
+            send_pipeline_rejection_notification(
+                rejected_by_role="dean",
+                rejected_by_name=dean["name"],
+                target_roles=["advisor", "hod", "principal"],
+                department=department,
+                class_name=real_class_name,
+                student_name=s.get("student_name", ""),
+                register_number=s.get("register_number", ""),
+                rejection_reason=reason
+            )
+        write_audit_log(dean["username"], f"Dean Reject Entire Class: {rejection_reason}", None, department, real_class_name)
+
+    save_dean_approval_state(department, real_class_name, state)
+    sync_dean_status_to_pipeline(department, real_class_name, state)
+    return RedirectResponse(url=f"/dean/class/{department}/{class_name}", status_code=303)
+
+@app.post("/dean/action/student")
+def dean_action_student(
+    request: Request,
+    department: str = Form(...),
+    class_name: str = Form(...),
+    register_number: str = Form(...),
+    action: str = Form(...),
+    rejection_reason: str = Form(None)
+):
+    dean = request.session.get("dean")
+    if not dean:
+        return RedirectResponse(url="/dean/login", status_code=303)
+        
+    real_class_name = class_name.replace("_", " ")
+    state = load_dean_approval_state(department, real_class_name)
+    
+    for s in state.get("students", []):
+        if s["register_number"] == register_number:
+            if action == "approve":
+                s["status"] = "Approved"
+                s["rejection_reason"] = ""
+                write_audit_log(dean["username"], "Dean Approve Student", register_number, department, real_class_name)
+            elif action == "reject":
+                reason = rejection_reason or "Rejected by Dean"
+                s["status"] = "Rejected"
+                s["rejection_reason"] = reason
+                send_pipeline_rejection_notification(
+                    rejected_by_role="dean",
+                    rejected_by_name=dean["name"],
+                    target_roles=["advisor", "hod", "principal"],
+                    department=department,
+                    class_name=real_class_name,
+                    student_name=s.get("student_name", ""),
+                    register_number=register_number,
+                    rejection_reason=reason
+                )
+                write_audit_log(dean["username"], f"Dean Reject Student: {rejection_reason}", register_number, department, real_class_name)
+            break
+
+    approved_cnt = sum(1 for s in state["students"] if s["status"] == "Approved")
+    rejected_cnt = sum(1 for s in state["students"] if s["status"] == "Rejected")
+    total_cnt = len(state["students"])
+    
+    if approved_cnt == total_cnt:
+        state["status"] = "Approved"
+    elif rejected_cnt == total_cnt:
+        state["status"] = "Rejected"
+    elif approved_cnt > 0:
+        state["status"] = "Partially Approved"
+
+    state["last_updated"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    save_dean_approval_state(department, real_class_name, state)
+    sync_dean_status_to_pipeline(department, real_class_name, state)
+    return RedirectResponse(url=f"/dean/class/{department}/{class_name}", status_code=303)
+
 
 # ================= PRINCIPAL PORTAL =================
 
@@ -1277,6 +1686,7 @@ def principal_dashboard(request: Request):
         
     batches = get_batches_for_principal()
     stats = get_principal_stats()
+    notifications = get_notifications_for_role("principal")
     
     office_direct_batches = [b for b in batches if b.get("workflow_type") == "Office Direct Upload"]
     advisor_batches = [b for b in batches if b.get("workflow_type") != "Office Direct Upload"]
@@ -1290,7 +1700,8 @@ def principal_dashboard(request: Request):
             "batches": batches,
             "office_direct_batches": office_direct_batches,
             "advisor_batches": advisor_batches,
-            "stats": stats
+            "stats": stats,
+            "notifications": notifications
         }
     )
 
@@ -1303,7 +1714,6 @@ def principal_class_detail(request: Request, department: str, class_name: str):
         
     real_class_name = class_name.replace("_", " ")
     
-    # 1. Load submission metadata from advisor submission or HOD approval or Principal approval
     advisor_folder = get_advisor_class_folder(department, real_class_name)
     submission_file = advisor_folder / "submission.json"
     
@@ -1345,13 +1755,10 @@ def principal_class_detail(request: Request, department: str, class_name: str):
             else:
                 raise HTTPException(status_code=404, detail="No submission or approval record found for this class.")
         
-    # 2. Load Principal approval state
     p_state = load_principal_state(department, real_class_name)
     students = p_state.get("students", [])
     students.sort(key=lambda s: (STATUS_PRIORITY.get(s.get("status", ""), 99), s.get("register_number", "")))
 
-    
-    # Calculate stats for the class
     total = len(students)
     approved = sum(1 for s in students if s["status"] == "Approved")
     rejected = sum(1 for s in students if s["status"] == "Rejected")
@@ -1363,6 +1770,8 @@ def principal_class_detail(request: Request, department: str, class_name: str):
         "rejected": rejected
     }
     
+    notifications = get_notifications_for_role("principal", department=department)
+    
     return templates.TemplateResponse(
         request=request,
         name="principal_class_detail.html",
@@ -1373,7 +1782,8 @@ def principal_class_detail(request: Request, department: str, class_name: str):
             "class_name": real_class_name,
             "submission": submission,
             "students": students,
-            "class_stats": class_stats
+            "class_stats": class_stats,
+            "notifications": notifications
         }
     )
 
@@ -1401,28 +1811,60 @@ def principal_action_class(
             approved_regs.append(s["register_number"])
         p_state["certificate_count"] = len(approved_regs)
         
-        # Save state first so ZIP generator reads it
         save_principal_state(department, class_name, p_state)
-            
-        # Regenerate final certificates with actual signature!
         regenerate_final_certificates(department, class_name, approved_regs)
-        # Generate final ZIP
         generate_final_zip(department, class_name)
-        
         write_audit_log(principal["username"], "Principal Approve Entire Class", None, department, class_name)
+        
+    elif action == "approve_except_rejected":
+        p_state["approval_time"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        approved_regs = []
+        any_app = False
+        any_rej = False
+        for s in p_state["students"]:
+            if s.get("status") == "Rejected":
+                any_rej = True
+            else:
+                s["status"] = "Approved"
+                s["rejection_reason"] = ""
+                approved_regs.append(s["register_number"])
+                any_app = True
+                
+        p_state["certificate_count"] = len(approved_regs)
+        if any_app and any_rej:
+            p_state["status"] = "Partially Approved"
+        elif any_app:
+            p_state["status"] = "Approved"
+        elif any_rej:
+            p_state["status"] = "Rejected"
+            
+        save_principal_state(department, class_name, p_state)
+        if approved_regs:
+            regenerate_final_certificates(department, class_name, approved_regs)
+            generate_final_zip(department, class_name)
+        write_audit_log(principal["username"], "Principal Accept Everyone Except Rejected", None, department, class_name)
         
     elif action == "reject_all":
         if not rejection_reason or not rejection_reason.strip():
             raise HTTPException(status_code=400, detail="Rejection reason is mandatory.")
         p_state["status"] = "Rejected"
         p_state["approval_time"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        reason = rejection_reason.strip()
         for s in p_state["students"]:
             s["status"] = "Rejected"
-            s["rejection_reason"] = rejection_reason.strip()
+            s["rejection_reason"] = reason
+            send_pipeline_rejection_notification(
+                rejected_by_role="principal",
+                rejected_by_name=principal["name"],
+                target_roles=["advisor", "hod", "dean"],
+                department=department,
+                class_name=class_name,
+                student_name=s.get("student_name", ""),
+                register_number=s.get("register_number", ""),
+                rejection_reason=reason
+            )
         p_state["certificate_count"] = 0
-        
         save_principal_state(department, class_name, p_state)
-            
         write_audit_log(principal["username"], f"Principal Reject Entire Class. Reason: {rejection_reason}", None, department, class_name)
     
     class_name_param = class_name.replace(" ", "_")
@@ -1456,7 +1898,20 @@ def principal_action_student(
     elif action == "reject":
         if not rejection_reason or not rejection_reason.strip():
             raise HTTPException(status_code=400, detail="Rejection reason is mandatory.")
+        reason = rejection_reason.strip()
         student_match["status"] = "Rejected"
+        student_match["rejection_reason"] = reason
+        send_pipeline_rejection_notification(
+            rejected_by_role="principal",
+            rejected_by_name=principal["name"],
+            target_roles=["advisor", "hod", "dean"],
+            department=department,
+            class_name=class_name,
+            student_name=student_match.get("student_name", ""),
+            register_number=register_number,
+            rejection_reason=reason
+        )
+        write_audit_log(principal["username"], f"Principal Reject Student: {rejection_reason}", register_number, department, class_name)
         student_match["rejection_reason"] = rejection_reason.strip()
         write_audit_log(principal["username"], f"Principal Reject Student. Reason: {rejection_reason}", register_number, department, class_name)
         
@@ -1863,6 +2318,10 @@ def change_password(
         user_info = request.session.get("hod")
         role = "hod"
         redirect_url = "/hod"
+    elif request.session.get("dean"):
+        user_info = request.session.get("dean")
+        role = "dean"
+        redirect_url = "/dean"
     elif request.session.get("principal"):
         user_info = request.session.get("principal")
         role = "principal"

@@ -144,6 +144,20 @@
             transform: translateY(-1px);
         }
 
+        /* Dark Blue Theme for Dean */
+        .dean-theme .portal-icon-wrapper {
+            background-color: rgba(15, 43, 92, 0.1);
+            color: #0f2b5c;
+        }
+        .dean-theme .btn-portal {
+            background-color: #0f2b5c;
+            color: #ffffff;
+        }
+        .dean-theme .btn-portal:hover {
+            background-color: #153268;
+            transform: translateY(-1px);
+        }
+
         /* Teal/Emerald Theme for Office */
         .office-theme .portal-icon-wrapper {
             background-color: rgba(16, 185, 129, 0.1);
@@ -298,7 +312,7 @@
             </div>
 
             <!-- HOD Portal -->
-            <div class="col-md-6 col-lg-3">
+            <div class="col-md-6 col-lg-4 col-xl-2-4">
                 <div class="portal-card hod-theme">
                     <div class="portal-card-body">
                         <div>
@@ -317,8 +331,28 @@
                 </div>
             </div>
 
+            <!-- Dean Portal (Computer Cluster) -->
+            <div class="col-md-6 col-lg-4 col-xl-2-4">
+                <div class="portal-card dean-theme">
+                    <div class="portal-card-body">
+                        <div>
+                            <div class="portal-icon-wrapper">
+                                <i class="fa-solid fa-graduation-cap"></i>
+                            </div>
+                            <h3 class="h5 fw-bold mb-2">Dean Portal</h3>
+                            <p class="text-muted fs-7">Review & approve Computer Cluster batches (CSE, AIDS, IT, CS, CSBS) before forwarding to Principal.</p>
+                        </div>
+                        <div class="d-grid mt-4">
+                            <a href="/dean/login" class="btn btn-portal btn-lg" id="deanPortalBtn">
+                                <i class="fa-solid fa-right-to-bracket me-2"></i> Enter Dean
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <!-- Principal Portal -->
-            <div class="col-md-6 col-lg-3">
+            <div class="col-md-6 col-lg-4 col-xl-2-4">
                 <div class="portal-card principal-theme">
                     <div class="portal-card-body">
                         <div>
@@ -338,7 +372,7 @@
             </div>
 
             <!-- Office Portal -->
-            <div class="col-md-6 col-lg-3">
+            <div class="col-md-6 col-lg-4 col-xl-2-4">
                 <div class="portal-card office-theme">
                     <div class="portal-card-body">
                         <div>

@@ -3,61 +3,61 @@
         {
             "username": "hod_CSE",
             "password": "hod_cse_pswd",
-            "name": "Dr. Praveena V (HOD - CSE)",
+            "name": "Dr. V Praveena - Ph.D (Professor & Head)",
             "department": "CSE"
         },
         {
             "username": "hod_IT",
             "password": "hod_it_pswd",
-            "name": "Dr. hod_name_it (HOD - IT)",
+            "name": "Dr. M Krishnamoorthi - B.E., M.E., Ph.D. (Professor & Head)",
             "department": "IT"
         },
         {
             "username": "hod_ECE",
             "password": "hod_ece_pswd",
-            "name": "Dr. hod_name_ece (HOD - ECE)",
+            "name": "Dr. CHANDRASEKHARAN NATARAJ - PhD in Engineering (Professor & Head)",
             "department": "ECE"
         },
         {
             "username": "hod_EEE",
             "password": "hod_eee_pswd",
-            "name": "Dr. hod_name_eee (HOD - EEE)",
+            "name": "Dr. P PANDIYAN - B.E., M.Tech., Ph.D. (Professor & Head)",
             "department": "EEE"
         },
         {
             "username": "hod_AIDS",
             "password": "hod_aids_pswd",
-            "name": "Dr. hod_name_aids (HOD - AIDS)",
+            "name": "Dr. Srinivasan L - Ph.D (Associate Professor & Head)",
             "department": "AIDS"
         },
         {
             "username": "hod_MECH",
             "password": "hod_mech_pswd",
-            "name": "Dr. hod_name_mech (HOD - MECH)",
+            "name": "Prof. SREE BALAJI V S - B.E., M.E., Ph.D., M.B.A., F.I.E, M.I.S.T.E.,(Professor & Head)",
             "department": "MECH"
         },
         {
             "username": "hod_CIVIL",
             "password": "hod_civil_pswd",
-            "name": "Dr. hod_name_civil (HOD - CIVIL)",
+            "name": "Dr. Murali K - B.E., M.E., Ph.D. (Professor & Head)",
             "department": "CIVIL"
         },
         {
             "username": "hod_CSBS",
             "password": "hod_csbs_pswd",
-            "name": "Dr. hod_name_csbs (HOD - CSBS)",
+            "name": "Dr. A S SHANTHI - B.E., M.E., Ph.D., (Assistant Professor & Head)",
             "department": "CSBS"
         },
         {
             "username": "hod_CS",
             "password": "hod_cybersecurity_pswd",
-            "name": "Dr. hod_name_cybersecurity (HOD - CYBERSECURITY)",
+            "name": "Dr. V Praveena - Ph.D (Professor & Head)",
             "department": "CS"
         },
         {
             "username": "hod_BME",
             "password": "hod_bme_pswd",
-            "name": "Dr. hod_name_bme (HOD - BME)",
+            "name": "Dr. PRAVEEN CHAKKRAVARTHY SELVARAJ - M.E., Ph.D.,(Professor & Head)",
             "department": "BME"
         }
     ]

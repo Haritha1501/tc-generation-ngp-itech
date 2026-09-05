@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dean Login - TC Generator</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- FontAwesome for icons -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: #f8fafc;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .login-card {
+            border: none;
+            border-radius: 16px;
+            box-shadow: 0 4px 25px rgba(0, 0, 0, 0.1);
+            background: #ffffff;
+            overflow: hidden;
+            width: 100%;
+            max-width: 460px;
+        }
+        .login-header {
+            background: linear-gradient(135deg, #0f2b5c 0%, #1e3c72 100%);
+            color: #ffffff;
+            padding: 35px 30px;
+            text-align: center;
+        }
+        .login-header h1 {
+            font-size: 22px;
+            font-weight: 700;
+            margin-bottom: 5px;
+        }
+        .login-header p {
+            font-size: 13px;
+            margin-bottom: 0;
+            opacity: 0.85;
+        }
+        .login-body {
+            padding: 35px 30px;
+        }
+        .btn-primary {
+            background-color: #0f2b5c;
+            border-color: #0f2b5c;
+            font-weight: 600;
+            padding: 12px;
+        }
+        .btn-primary:hover {
+            background-color: #1e3c72;
+            border-color: #1e3c72;
+        }
+    </style>
+</head>
+<body>
+
+<div class="login-card">
+    <div class="login-header">
+        <i class="fa-solid fa-graduation-cap fa-3x mb-3 text-warning"></i>
+        <h1>Dean Portal</h1>
+        <p>Computer Cluster (CSE, AIDS, IT, CS, CSBS)</p>
+    </div>
+    
+    <div class="login-body">
+        {% if error %}
+        <div class="alert alert-danger d-flex align-items-center" role="alert">
+            <i class="fa-solid fa-triangle-exclamation me-2"></i>
+            <div>{{ error }}</div>
+        </div>
+        {% endif %}
+        
+        <form action="/dean/login" method="post" id="loginForm">
+            <div class="mb-3">
+                <label for="username" class="form-label text-secondary fw-semibold">Username</label>
+                <div class="input-group">
+                    <span class="input-group-text bg-white"><i class="fa-solid fa-user text-secondary"></i></span>
+                    <input type="text" class="form-control" id="username" name="username" placeholder="Enter username (e.g. dean_computer)" required>
+                </div>
+            </div>
+            
+            <div class="mb-4">
+                <label for="password" class="form-label text-secondary fw-semibold">Password</label>
+                <div class="input-group">
+                    <span class="input-group-text bg-white"><i class="fa-solid fa-lock text-secondary"></i></span>
+                    <input type="password" class="form-control" id="password" name="password" placeholder="Enter password" required>
+                </div>
+            </div>
+            
+            <div class="d-grid gap-2">
+                <button type="submit" class="btn btn-primary fw-bold" id="btnLogin">
+                    <i class="fa-solid fa-right-to-bracket me-2"></i> Log In to Dean Portal
+                </button>
+                <a href="/" class="btn btn-outline-secondary btn-sm mt-2 text-decoration-none">
+                    <i class="fa-solid fa-arrow-left me-1"></i> Back to Main Portal
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+
+</body>
+</html>

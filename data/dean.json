@@ -1,0 +1,13 @@
+{
+    "deans": [
+        {
+            "username": "dean_computing",
+            "password": "dean_pswd",
+            "name": "Dr. Palanikkumar D, Ph.D.",
+            "title": "Dean - Computing Sciences",
+            "role": "dean",
+            "departments": ["CSE", "AIDS", "IT", "CS", "CSBS"],
+            "email": "palanikkumar@drngpit.ac.in"
+        }
+    ]
+}

@@ -38,5 +38,237 @@
         "student": "",
         "department": "CSE",
         "class": "IV BE CSE A"
+    },
+    {
+        "timestamp": "2026-09-04 21:32:46",
+        "user": "advisor_cse_a",
+        "action": "Submit to HOD",
+        "student": "",
+        "department": "CSE",
+        "class": "IV BE CSE A"
+    },
+    {
+        "timestamp": "2026-09-04 21:32:46",
+        "user": "hod_CSE",
+        "action": "HOD Approve Entire Class",
+        "student": "",
+        "department": "CSE",
+        "class": "IV BE CSE A"
+    },
+    {
+        "timestamp": "2026-09-04 21:32:47",
+        "user": "dean_computer",
+        "action": "Dean Approve Entire Class",
+        "student": "",
+        "department": "CSE",
+        "class": "IV BE CSE A"
+    },
+    {
+        "timestamp": "2026-09-04 21:32:47",
+        "user": "hod_EEE",
+        "action": "HOD Approve Entire Class",
+        "student": "",
+        "department": "EEE",
+        "class": "IV BE EEE A"
+    },
+    {
+        "timestamp": "2026-09-04 21:37:23",
+        "user": "dean_computer",
+        "action": "Dean Reject Student: Bad conduct",
+        "student": "710723205005",
+        "department": "IT",
+        "class": "IV BE IT A"
+    },
+    {
+        "timestamp": "2026-09-04 21:37:41",
+        "user": "dean_computer",
+        "action": "Dean Reject Student: Poor conduct",
+        "student": "710723205008",
+        "department": "IT",
+        "class": "IV BE IT A"
+    },
+    {
+        "timestamp": "2026-09-04 22:45:00",
+        "user": "hod_IT",
+        "action": "HOD Reject Student. Reason: Invalid conduct record",
+        "student": "710723205001",
+        "department": "IT",
+        "class": "IV BE IT A"
+    },
+    {
+        "timestamp": "2026-09-04 22:45:01",
+        "user": "hod_IT",
+        "action": "HOD Accept Everyone Except Rejected",
+        "student": "",
+        "department": "IT",
+        "class": "IV BE IT A"
+    },
+    {
+        "timestamp": "2026-09-04 22:45:01",
+        "user": "dean_computer",
+        "action": "Dean Accept Everyone Except Rejected",
+        "student": "",
+        "department": "IT",
+        "class": "IV BE IT A"
+    },
+    {
+        "timestamp": "2026-09-04 22:54:00",
+        "user": "advisor_aids_a",
+        "action": "Upload CSV",
+        "student": "",
+        "department": "AIDS",
+        "class": "IV BE AIDS A"
+    },
+    {
+        "timestamp": "2026-09-04 22:54:21",
+        "user": "advisor_aids_a",
+        "action": "Generate Certificates",
+        "student": "",
+        "department": "AIDS",
+        "class": "IV BE AIDS A"
+    },
+    {
+        "timestamp": "2026-09-04 22:54:31",
+        "user": "advisor_aids_a",
+        "action": "Submit to HOD",
+        "student": "",
+        "department": "AIDS",
+        "class": "IV BE AIDS A"
+    },
+    {
+        "timestamp": "2026-09-04 22:55:53",
+        "user": "hod_AIDS",
+        "action": "HOD Approve Student",
+        "student": "710724315001",
+        "department": "AIDS",
+        "class": "IV BE AIDS A"
+    },
+    {
+        "timestamp": "2026-09-04 22:55:56",
+        "user": "hod_AIDS",
+        "action": "HOD Approve Student",
+        "student": "710724315002",
+        "department": "AIDS",
+        "class": "IV BE AIDS A"
+    },
+    {
+        "timestamp": "2026-09-04 22:56:10",
+        "user": "hod_AIDS",
+        "action": "HOD Accept Everyone Except Rejected",
+        "student": "",
+        "department": "AIDS",
+        "class": "IV BE AIDS A"
+    },
+    {
+        "timestamp": "2026-09-04 22:56:32",
+        "user": "hod_AIDS",
+        "action": "HOD Reject Student. Reason: Bad conduct",
+        "student": "710724315003",
+        "department": "AIDS",
+        "class": "IV BE AIDS A"
+    },
+    {
+        "timestamp": "2026-09-04 22:56:36",
+        "user": "hod_AIDS",
+        "action": "HOD Accept Everyone Except Rejected",
+        "student": "",
+        "department": "AIDS",
+        "class": "IV BE AIDS A"
+    },
+    {
+        "timestamp": "2026-09-04 22:59:18",
+        "user": "dean_computer",
+        "action": "Dean Accept Everyone Except Rejected",
+        "student": "",
+        "department": "AIDS",
+        "class": "IV BE AIDS A"
+    },
+    {
+        "timestamp": "2026-09-04 23:01:25",
+        "user": "principal",
+        "action": "Principal Accept Everyone Except Rejected",
+        "student": "",
+        "department": "AIDS",
+        "class": "IV BE AIDS A"
+    },
+    {
+        "timestamp": "2026-09-04 23:02:50",
+        "user": "principal",
+        "action": "Principal Approve Entire Class",
+        "student": "",
+        "department": "AIDS",
+        "class": "IV BE AIDS A"
+    },
+    {
+        "timestamp": "2026-09-04 23:03:25",
+        "user": "office",
+        "action": "Office Download Final ZIP",
+        "student": "",
+        "department": "AIDS",
+        "class": "IV BE AIDS A"
+    },
+    {
+        "timestamp": "2026-09-05 12:38:02",
+        "user": "office",
+        "action": "Office Download Final ZIP",
+        "student": "",
+        "department": "AIDS",
+        "class": "IV BE AIDS A"
+    },
+    {
+        "timestamp": "2026-09-05 12:41:51",
+        "user": "principal",
+        "action": "Principal Accept Everyone Except Rejected",
+        "student": "",
+        "department": "AIDS",
+        "class": "IV BE AIDS A"
+    },
+    {
+        "timestamp": "2026-09-05 12:42:03",
+        "user": "principal",
+        "action": "Principal Accept Everyone Except Rejected",
+        "student": "",
+        "department": "AIDS",
+        "class": "IV BE AIDS A"
+    },
+    {
+        "timestamp": "2026-09-05 12:44:54",
+        "user": "principal",
+        "action": "Principal Accept Everyone Except Rejected",
+        "student": "",
+        "department": "AIDS",
+        "class": "IV BE AIDS A"
+    },
+    {
+        "timestamp": "2026-09-05 12:55:29",
+        "user": "principal",
+        "action": "Principal Accept Everyone Except Rejected",
+        "student": "",
+        "department": "AIDS",
+        "class": "IV BE AIDS A"
+    },
+    {
+        "timestamp": "2026-09-05 13:00:18",
+        "user": "office",
+        "action": "Office Download Final ZIP",
+        "student": "",
+        "department": "AIDS",
+        "class": "IV BE AIDS A"
+    },
+    {
+        "timestamp": "2026-09-05 13:06:23",
+        "user": "principal",
+        "action": "Principal Approve Student",
+        "student": "710724315003",
+        "department": "AIDS",
+        "class": "IV BE AIDS A"
+    },
+    {
+        "timestamp": "2026-09-05 13:08:53",
+        "user": "office",
+        "action": "Office Download Final ZIP",
+        "student": "",
+        "department": "AIDS",
+        "class": "IV BE AIDS A"
     }
 ]

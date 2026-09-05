@@ -1,0 +1,40 @@
+[
+    {
+        "id": 1,
+        "rejected_by_role": "hod",
+        "rejected_by_name": "Dr. hod_name_it (HOD - IT)",
+        "target_roles": [
+            "advisor",
+            "dean",
+            "principal"
+        ],
+        "advisor_username": "advisor_it_a",
+        "student_name": "Aadhav Kumar",
+        "identifier": "710723205001",
+        "department": "IT",
+        "class_name": "IV BE IT A",
+        "rejection_reason": "Invalid conduct record",
+        "sent_at": "2026-09-04 22:45:00",
+        "read": false,
+        "read_by": []
+    },
+    {
+        "id": 2,
+        "rejected_by_role": "hod",
+        "rejected_by_name": "Dr. hod_name_aids (HOD - AIDS)",
+        "target_roles": [
+            "advisor",
+            "dean",
+            "principal"
+        ],
+        "advisor_username": "advisor_aids_a",
+        "student_name": "Lokesh T",
+        "identifier": "710724315003",
+        "department": "AIDS",
+        "class_name": "IV BE AIDS A",
+        "rejection_reason": "Bad conduct",
+        "sent_at": "2026-09-04 22:56:32",
+        "read": false,
+        "read_by": []
+    }
+]

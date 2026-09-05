@@ -101,8 +101,16 @@ def get_all_batches():
                                 with open(p_file, "r", encoding="utf-8") as f:
                                     p_data = json.load(f)
                                 key = (dept, class_name)
+                                p_status = p_data.get("status", "")
+                                cert_count = p_data.get("certificate_count", 0)
+                                zip_exists = (class_dir / f"{class_dir.name}_final.zip").exists()
+                                
                                 if key in batches:
-                                    batches[key]["status"] = p_data.get("status", batches[key]["status"])
+                                    batches[key]["status"] = p_status
+                                    batches[key]["principal_status"] = p_status
+                                    batches[key]["certificate_count"] = cert_count
+                                    if p_status in ["Approved", "Partially Approved"] or zip_exists or cert_count > 0:
+                                        batches[key]["is_final_available"] = True
                             except Exception:
                                 pass
 
@@ -111,17 +119,20 @@ def get_all_batches():
 def get_office_stats():
     batches = get_all_batches()
     total_batches = len(batches)
-    approved_batches = sum(1 for b in batches if b["status"] == "Approved")
-    pending_principal = sum(1 for b in batches if b["status"] in ["Approved", "Partially Approved", "Direct Office Submission", "Submitted to Principal"])
+    approved_batches = sum(1 for b in batches if b.get("is_final_available") or b["status"] in ["Approved", "Partially Approved"])
+    pending_batches = sum(1 for b in batches if not b.get("is_final_available") and b["status"] not in ["Approved", "Partially Approved", "Rejected"])
     
     rejected_students = get_all_rejected_students()
     total_rejected = len(rejected_students)
     
+    total_students = sum(b.get("total_students", 0) for b in batches)
+    
     return {
         "total_batches": total_batches,
         "approved_batches": approved_batches,
-        "pending_principal": pending_principal,
-        "total_rejected": total_rejected
+        "pending_batches": pending_batches,
+        "total_rejected": total_rejected,
+        "total_students": total_students
     }
 
 def get_all_rejected_students():
