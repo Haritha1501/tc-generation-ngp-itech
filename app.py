@@ -73,7 +73,14 @@ from services.office.office_dashboard_service import (
     get_all_rejected_students,
     submit_office_batch_to_principal
 )
-
+from services.sorting_search_service import (
+    parse_class_info,
+    filter_by_odd_even_year,
+    group_by_batch_and_class,
+    group_by_dept_batch_class,
+    group_college_academic_year,
+    sort_students
+)
 
 import os
 
@@ -330,7 +337,7 @@ def logout(request: Request):
 # ================= ADVISOR DASHBOARD =================
 
 @app.get("/advisor")
-def advisor_dashboard(request: Request):
+def advisor_dashboard(request: Request, year_branch: str = "all", sort_by: str = "priority"):
     advisor = request.session.get("advisor")
     if not advisor:
         return RedirectResponse(url="/login")
@@ -338,12 +345,21 @@ def advisor_dashboard(request: Request):
     dept = advisor["department"]
     class_name = advisor["class"]
     
+    parsed_info = parse_class_info(class_name, dept)
+    
     # Check if there is data
     students = load_students_status(dept, class_name)
-    students.sort(key=lambda s: (STATUS_PRIORITY.get(s.get("status", ""), 99), s.get("register_number", "")))
+    students = sort_students(students, sort_by=sort_by)
     stats = get_class_stats(dept, class_name)
     is_submitted = is_class_submitted(dept, class_name)
     
+    # Check odd/even branch match for this advisor's class
+    show_students = True
+    if year_branch == "odd" and not parsed_info["is_odd_year"]:
+        show_students = False
+    elif year_branch == "even" and not parsed_info["is_even_year"]:
+        show_students = False
+
     # Retrieve and clear flash messages from session
     upload_errors = request.session.pop("upload_errors", None)
     upload_success = request.session.pop("upload_success", None)
@@ -371,14 +387,17 @@ def advisor_dashboard(request: Request):
         context={
             "request": request,
             "advisor": advisor,
-            "students": students,
+            "students": students if show_students else [],
             "stats": stats,
             "is_submitted": is_submitted,
             "submission": submission_metadata,
             "submission_status": submission_status,
             "upload_errors": upload_errors,
             "upload_success": upload_success,
-            "notifications": notifications
+            "notifications": notifications,
+            "year_branch": year_branch,
+            "sort_by": sort_by,
+            "parsed_info": parsed_info
         }
     )
 
@@ -1147,13 +1166,15 @@ def hod_logout(request: Request):
     return RedirectResponse(url="/")
 
 @app.get("/hod")
-def hod_dashboard(request: Request):
+def hod_dashboard(request: Request, year_branch: str = "all"):
     hod = request.session.get("hod")
     if not hod:
         return RedirectResponse(url="/hod/login")
         
     dept = hod["department"]
-    classes = get_submitted_classes(dept)
+    raw_classes = get_submitted_classes(dept)
+    filtered_classes = filter_by_odd_even_year(raw_classes, year_branch)
+    batch_grouped_classes = group_by_batch_and_class(filtered_classes)
     stats = get_hod_stats(dept)
     notifications = get_notifications_for_role("hod", department=dept)
     
@@ -1163,7 +1184,9 @@ def hod_dashboard(request: Request):
         context={
             "request": request,
             "hod": hod,
-            "classes": classes,
+            "classes": filtered_classes,
+            "batch_grouped_classes": batch_grouped_classes,
+            "year_branch": year_branch,
             "stats": stats,
             "notifications": notifications
         }
@@ -1453,12 +1476,14 @@ def dean_logout(request: Request):
     return RedirectResponse(url="/")
 
 @app.get("/dean")
-def dean_dashboard(request: Request):
+def dean_dashboard(request: Request, year_branch: str = "all"):
     dean = request.session.get("dean")
     if not dean:
         return RedirectResponse(url="/dean/login")
         
-    classes = get_submitted_classes_for_dean()
+    raw_classes = get_submitted_classes_for_dean()
+    filtered_classes = filter_by_odd_even_year(raw_classes, year_branch)
+    dept_grouped_classes = group_by_dept_batch_class(filtered_classes, cluster_depts=COMPUTER_CLUSTER_DEPTS)
     stats = get_dean_stats()
     notifications = get_notifications_for_role("dean")
     
@@ -1468,7 +1493,9 @@ def dean_dashboard(request: Request):
         context={
             "request": request,
             "dean": dean,
-            "classes": classes,
+            "classes": filtered_classes,
+            "dept_grouped_classes": dept_grouped_classes,
+            "year_branch": year_branch,
             "stats": stats,
             "notifications": notifications
         }
@@ -1679,17 +1706,19 @@ def principal_logout(request: Request):
     return RedirectResponse(url="/")
 
 @app.get("/principal")
-def principal_dashboard(request: Request):
+def principal_dashboard(request: Request, year_branch: str = "all"):
     principal = request.session.get("principal")
     if not principal:
         return RedirectResponse(url="/principal/login")
         
-    batches = get_batches_for_principal()
+    raw_batches = get_batches_for_principal()
+    filtered_batches = filter_by_odd_even_year(raw_batches, year_branch)
+    academic_grouped_batches = group_college_academic_year(filtered_batches)
     stats = get_principal_stats()
     notifications = get_notifications_for_role("principal")
     
-    office_direct_batches = [b for b in batches if b.get("workflow_type") == "Office Direct Upload"]
-    advisor_batches = [b for b in batches if b.get("workflow_type") != "Office Direct Upload"]
+    office_direct_batches = [b for b in filtered_batches if b.get("workflow_type") == "Office Direct Upload"]
+    advisor_batches = [b for b in filtered_batches if b.get("workflow_type") != "Office Direct Upload"]
     
     return templates.TemplateResponse(
         request=request,
@@ -1697,9 +1726,11 @@ def principal_dashboard(request: Request):
         context={
             "request": request,
             "principal": principal,
-            "batches": batches,
+            "batches": filtered_batches,
+            "academic_grouped_batches": academic_grouped_batches,
             "office_direct_batches": office_direct_batches,
             "advisor_batches": advisor_batches,
+            "year_branch": year_branch,
             "stats": stats,
             "notifications": notifications
         }
@@ -2067,12 +2098,14 @@ def office_logout(request: Request):
 
 
 @app.get("/office")
-def office_dashboard(request: Request):
+def office_dashboard(request: Request, year_branch: str = "all"):
     office = request.session.get("office")
     if not office:
         return RedirectResponse(url="/office/login")
         
-    batches = get_all_batches()
+    raw_batches = get_all_batches()
+    filtered_batches = filter_by_odd_even_year(raw_batches, year_branch)
+    academic_grouped_batches = group_college_academic_year(filtered_batches)
     stats = get_office_stats()
     rejected_students = get_all_rejected_students()
     
@@ -2086,7 +2119,9 @@ def office_dashboard(request: Request):
         context={
             "request": request,
             "office": office,
-            "batches": batches,
+            "batches": filtered_batches,
+            "academic_grouped_batches": academic_grouped_batches,
+            "year_branch": year_branch,
             "stats": stats,
             "rejected_students": rejected_students,
             "upload_errors": upload_errors,

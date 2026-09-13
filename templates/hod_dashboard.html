@@ -172,6 +172,31 @@
                 <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
             </div>
             {% endif %}
+            <!-- Academic Year Branching Filter Bar -->
+            <div class="card shadow-sm mb-4 border-0">
+                <div class="card-body p-3 bg-light rounded-3 d-flex flex-wrap align-items-center justify-content-between gap-3">
+                    <div class="d-flex align-items-center gap-2">
+                        <i class="fa-solid fa-code-branch text-primary fa-lg me-1"></i>
+                        <span class="fw-bold text-dark me-2">Academic Year Branching:</span>
+                        <div class="btn-group" role="group">
+                            <a href="/hod?year_branch=all" class="btn btn-sm {% if year_branch == 'all' %}btn-burgundy fw-bold{% else %}btn-outline-secondary{% endif %}">
+                                <i class="fa-solid fa-layer-group me-1"></i> All Academic Years
+                            </a>
+                            <a href="/hod?year_branch=odd" class="btn btn-sm {% if year_branch == 'odd' %}btn-burgundy fw-bold{% else %}btn-outline-secondary{% endif %}">
+                                <i class="fa-solid fa-book-bookmark me-1"></i> Odd Years (Sem 1, 3, 5, 7)
+                            </a>
+                            <a href="/hod?year_branch=even" class="btn btn-sm {% if year_branch == 'even' %}btn-burgundy fw-bold{% else %}btn-outline-secondary{% endif %}">
+                                <i class="fa-solid fa-book-open me-1"></i> Even Years (Sem 2, 4, 6, 8)
+                            </a>
+                        </div>
+                    </div>
+                    <div>
+                        <span class="badge bg-secondary px-3 py-2 fs-7">
+                            Department: <strong>{{ hod.department }}</strong>
+                        </span>
+                    </div>
+                </div>
+            </div>
 
             <!-- Stats Dashboard Counters -->
             <div class="row mb-4">
@@ -251,65 +276,84 @@
                     </div>
                 </div>
 
-                <!-- Right Side: Submissions Table -->
+                <!-- Right Side: Submissions Table (Batch-wise -> Class-wise) -->
                 <div class="col-lg-8">
                     <div class="card shadow-sm">
-                        <div class="card-header card-header-burgundy d-flex justify-content-between align-items-center">
-                            <span><i class="fa-solid fa-inbox me-2"></i> Advisor Submissions List</span>
-                            <span class="badge bg-light text-dark">{{ classes|length }} Classes</span>
+                        <div class="card-header card-header-burgundy d-flex flex-wrap justify-content-between align-items-center gap-2">
+                            <span><i class="fa-solid fa-layer-group me-2"></i> Department Submissions (Batch-wise &rarr; Class-wise)</span>
+                            <div class="input-group input-group-sm" style="max-width: 250px;">
+                                <span class="input-group-text bg-white text-secondary border-end-0"><i class="fa-solid fa-magnifying-glass"></i></span>
+                                <input type="text" id="hodSearchInput" class="form-control border-start-0" placeholder="Search batch or class..." onkeyup="filterHodSubmissions()">
+                            </div>
                         </div>
-                        <div class="card-body p-0">
-                            {% if not classes %}
+                        <div class="card-body p-3">
+                            {% if not batch_grouped_classes %}
                             <div class="text-center py-5">
                                 <i class="fa-solid fa-folder-open fa-3x text-secondary mb-3"></i>
                                 <h5>No class submissions received</h5>
-                                <p class="text-muted px-4">Classes submitted by advisor will show up here automatically.</p>
+                                <p class="text-muted px-4">Submissions from class advisors will appear here, clustered by batch & class.</p>
                             </div>
                             {% else %}
-                            <div class="table-responsive">
-                                <table class="table table-hover align-middle mb-0">
-                                    <thead class="table-light">
-                                        <tr>
-                                            <th class="ps-3">Class Name</th>
-                                            <th>Advisor</th>
-                                            <th>Submitted Time</th>
-                                            <th class="text-center">Students</th>
-                                            <th>Status</th>
-                                            <th class="text-center" style="width: 220px;">Actions</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {% for c in classes %}
-                                        <tr>
-                                            <td class="ps-3"><strong>{{ c.class }}</strong></td>
-                                            <td>{{ c.advisor }}</td>
-                                            <td><span class="fs-7 text-secondary">{{ c.submitted_time }}</span></td>
-                                            <td class="text-center"><span class="badge bg-secondary">{{ c.student_count }}</span></td>
-                                            <td>
-                                                {% if c.hod_status == "Submitted to HOD" %}
-                                                <span class="badge status-submitted"><i class="fa-solid fa-hourglass-half me-1"></i> Pending</span>
-                                                {% elif c.hod_status == "Approved" %}
-                                                <span class="badge status-approved"><i class="fa-solid fa-circle-check me-1"></i> Approved</span>
-                                                {% elif c.hod_status == "Rejected" %}
-                                                <span class="badge status-rejected"><i class="fa-solid fa-circle-xmark me-1"></i> Rejected</span>
-                                                {% else %}
-                                                <span class="badge status-partial"><i class="fa-solid fa-circle-info me-1"></i> {{ c.hod_status }}</span>
-                                                {% endif %}
-                                            </td>
-                                            <td class="text-center">
-                                                <a href="/hod/class/{{ c.department }}/{{ c.class|replace(' ', '_') }}" class="btn btn-burgundy btn-sm">
-                                                    <i class="fa-solid fa-file-signature me-1"></i> Review & Action
-                                                </a>
-                                                {% if c.hod_status == "Approved" or c.hod_status == "Partially Approved" %}
-                                                <a href="/hod/download-approved-zip/{{ c.department }}/{{ c.class|replace(' ', '_') }}" class="btn btn-outline-success btn-sm mt-1 mt-md-0">
-                                                    <i class="fa-solid fa-file-zipper"></i> ZIP
-                                                </a>
-                                                {% endif %}
-                                            </td>
-                                        </tr>
-                                        {% endfor %}
-                                    </tbody>
-                                </table>
+                            <div class="accordion" id="hodBatchAccordion">
+                                {% for batch_name, class_items in batch_grouped_classes.items() %}
+                                <div class="accordion-item mb-3 border rounded-3 shadow-sm hod-batch-group" data-batch="{{ batch_name }}">
+                                    <h2 class="accordion-header" id="headingHodBatch{{ loop.index }}">
+                                        <button class="accordion-button fw-bold text-dark bg-light py-3" type="button" data-bs-toggle="collapse" data-bs-target="#collapseHodBatch{{ loop.index }}" aria-expanded="true">
+                                            <i class="fa-solid fa-graduation-cap me-2 text-primary"></i> Batch: {{ batch_name }}
+                                            <span class="badge bg-primary ms-auto me-3">{{ class_items|length }} Classes</span>
+                                        </button>
+                                    </h2>
+                                    <div id="collapseHodBatch{{ loop.index }}" class="accordion-collapse collapse show">
+                                        <div class="accordion-body p-0">
+                                            <div class="table-responsive">
+                                                <table class="table table-hover align-middle mb-0 hod-class-table">
+                                                    <thead class="table-light">
+                                                        <tr>
+                                                            <th class="ps-3">Class Name</th>
+                                                            <th>Advisor</th>
+                                                            <th>Submitted Time</th>
+                                                            <th class="text-center">Students</th>
+                                                            <th>Status</th>
+                                                            <th class="text-center" style="width: 220px;">Actions</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        {% for c in class_items %}
+                                                        <tr class="hod-class-row">
+                                                            <td class="ps-3"><strong>{{ c.class }}</strong></td>
+                                                            <td>{{ c.advisor }}</td>
+                                                            <td><span class="fs-7 text-secondary">{{ c.submitted_time }}</span></td>
+                                                            <td class="text-center"><span class="badge bg-secondary">{{ c.student_count }}</span></td>
+                                                            <td>
+                                                                {% if c.hod_status == "Submitted to HOD" %}
+                                                                <span class="badge status-submitted"><i class="fa-solid fa-hourglass-half me-1"></i> Pending</span>
+                                                                {% elif c.hod_status == "Approved" %}
+                                                                <span class="badge status-approved"><i class="fa-solid fa-circle-check me-1"></i> Approved</span>
+                                                                {% elif c.hod_status == "Rejected" %}
+                                                                <span class="badge status-rejected"><i class="fa-solid fa-circle-xmark me-1"></i> Rejected</span>
+                                                                {% else %}
+                                                                <span class="badge status-partial"><i class="fa-solid fa-circle-info me-1"></i> {{ c.hod_status }}</span>
+                                                                {% endif %}
+                                                            </td>
+                                                            <td class="text-center">
+                                                                <a href="/hod/class/{{ c.department }}/{{ c.class|replace(' ', '_') }}" class="btn btn-burgundy btn-sm">
+                                                                    <i class="fa-solid fa-file-signature me-1"></i> Review & Action
+                                                                </a>
+                                                                {% if c.hod_status == "Approved" or c.hod_status == "Partially Approved" %}
+                                                                <a href="/hod/download-approved-zip/{{ c.department }}/{{ c.class|replace(' ', '_') }}" class="btn btn-outline-success btn-sm mt-1 mt-md-0">
+                                                                    <i class="fa-solid fa-file-zipper"></i> ZIP
+                                                                </a>
+                                                                {% endif %}
+                                                            </td>
+                                                        </tr>
+                                                        {% endfor %}
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                {% endfor %}
                             </div>
                             {% endif %}
                         </div>
@@ -353,5 +397,25 @@
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    function filterHodSubmissions() {
+        const query = document.getElementById('hodSearchInput').value.toLowerCase().trim();
+        const batchGroups = document.querySelectorAll('.hod-batch-group');
+
+        batchGroups.forEach(group => {
+            const rows = group.querySelectorAll('.hod-class-row');
+            let hasVisibleRow = false;
+
+            rows.forEach(row => {
+                const text = row.innerText.toLowerCase();
+                const match = text.includes(query) || group.getAttribute('data-batch').toLowerCase().includes(query);
+                row.style.display = match ? '' : 'none';
+                if (match) hasVisibleRow = true;
+            });
+
+            group.style.display = hasVisibleRow ? '' : 'none';
+        });
+    }
+</script>
 </body>
 </html>
